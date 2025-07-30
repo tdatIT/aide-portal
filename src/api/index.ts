@@ -18,7 +18,7 @@ const axiosClient = axios.create({
 const addAuthInterceptor = (client: any) => {
   client.interceptors.request.use(
     (config: any) => {
-      const token = localStorage.getItem('auth_token')
+      const token = localStorage.getItem('accessToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -41,7 +41,6 @@ function handleApiError(error: AxiosError<any>) {
     switch (status) {
       case 401:
         message.error('Phiên đăng nhập đã hết hạn')
-        localStorage.removeItem('auth_token')
         window.location.href = '/login'
         break
       case 403:
@@ -81,17 +80,13 @@ axiosClient.interceptors.response.use(
 )
 
 
-
-
-
-
 // API methods
 export const APIClient = {
   login: (credentials: LoginRequest): Promise<AxiosResponse<AuthResponse>> =>
-    axiosClient.post(`${AUTH_API_URL}/api/v1/auth/login`, credentials),
+    axios.post(`${AUTH_API_URL}/api/v1/auth/login`, credentials),
 
   loginWithGoogle: (request: GoogleAuthRequest): Promise<AxiosResponse<AuthResponse>> =>
-    axiosClient.post(`${AUTH_API_URL}/api/v1/auth/oauth2/google`, request),
+    axios.post(`${AUTH_API_URL}/api/v1/auth/oauth2/google`, request),
 
   logout: () => axiosClient.post(`${AUTH_API_URL}/api/v1/auth/logout`),
 
@@ -115,7 +110,7 @@ export const APIClient = {
   getPermissions: () => axiosClient.get('/permissions'),
 
   // Medical Categories
-  getMedicalCategories: (params?: any) => axiosClient.get('/medical-categories', { params }),
+  getClinicalCategories: (params?: any) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/clinical-cates`, { params }),
   createMedicalCategory: (data: any) => axiosClient.post('/medical-categories', data),
   updateMedicalCategory: (id: string, data: any) => axiosClient.put(`/medical-categories/${id}`, data),
   deleteMedicalCategory: (id: string) => axiosClient.delete(`/medical-categories/${id}`),

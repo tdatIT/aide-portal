@@ -3,43 +3,23 @@
     <div class="login-box">
       <!-- Logo and Title -->
       <div class="login-header">
-        <h1>Admin Portal</h1>
+        <h1>AIDE Admin Portal</h1>
       </div>
 
       <!-- Login Form -->
-      <a-form
-        :model="formState"
-        :rules="rules"
-        @finish="handleLogin"
-        class="login-form"
-        layout="vertical"
-      >
+      <a-form :model="formState" :rules="rules" @finish="handleLogin" @submit.prevent class="login-form" layout="vertical">
         <a-form-item name="username">
-          <a-input
-            v-model:value="formState.username"
-            :placeholder="$t('auth.username')"
-            size="large"
-            :prefix="h(UserOutlined)"
-          />
+          <a-input v-model:value="formState.username" :placeholder="$t('auth.username')" size="large"
+            :prefix="h(UserOutlined)" />
         </a-form-item>
 
-        <a-form-item name="password" >
-          <a-input-password
-            v-model:value="formState.password"
-            :placeholder="$t('auth.password')"
-            size="large"
-            :prefix="h(LockOutlined)"
-          />
+        <a-form-item name="password">
+          <a-input-password v-model:value="formState.password" :placeholder="$t('auth.password')" size="large"
+            :prefix="h(LockOutlined)" />
         </a-form-item>
 
         <a-form-item>
-          <a-button
-            type="primary"
-            html-type="submit"
-            size="large"
-            block
-            :loading="loading"
-          >
+          <a-button type="primary" html-type="submit" size="large" block :loading="loading">
             {{ $t('auth.login') }}
           </a-button>
         </a-form-item>
@@ -50,19 +30,8 @@
         <span style="color: #999; font-size: 12px;">HOẶC</span>
       </a-divider>
 
-      <!-- Google Identity Services Button -->
-      <a-button
-        size="large"
-        block
-        class="google-login-btn"
-        @click="handleGoogleLogin"
-        :loading="googleLoading"
-      >
-        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 20px; height: 20px; margin-right: 10px;" />
-        {{ $t('auth.loginWithGoogle') }}
-      </a-button>
-
-      
+      <!-- Google Sign-in Button -->
+      <div id="google-login-fallback" class="google-login-button"></div>
     </div>
   </div>
 </template>
@@ -82,18 +51,15 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // Google Identity Services configuration
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id'
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
 // Form state
 const formState = reactive({
   username: '',
   password: '',
-  remember: false
 })
 
 const loading = ref(false)
-const googleLoading = ref(false)
-const isGoogleSDKLoaded = ref(false)
 
 // Form validation rules
 const rules = {
@@ -132,7 +98,6 @@ const loadGoogleIdentityServices = () => {
   script.async = true
   script.defer = true
   script.onload = () => {
-    isGoogleSDKLoaded.value = true
     initializeGoogleAuth()
   }
   script.onerror = () => {
@@ -152,13 +117,18 @@ const initializeGoogleAuth = () => {
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleGoogleCallback,
-      // Enable FedCM for better privacy
-      use_fedcm_for_prompt: true,
-      // Disable automatic prompts, use button mode only
       auto_select: false,
-      cancel_on_tap_outside: true,
-      itp_support: true
+      use_fedcm_for_prompt: false
     })
+
+    window.google.accounts.id.renderButton(
+      document.getElementById('google-login-fallback'),
+      {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with'
+      }
+    )
   } catch (error) {
     console.error('Failed to initialize Google Auth:', error)
     message.error('Không thể khởi tạo Google Auth')
@@ -167,27 +137,27 @@ const initializeGoogleAuth = () => {
 
 const handleGoogleCallback = async (response: any) => {
   try {
-    googleLoading.value = true
-    
+
     if (!response?.credential) {
       throw new Error('No credential received from Google')
     }
-    
+
     // Call API with Google JWT token
     const apiResponse = await api.loginWithGoogle({ token: response.credential })
     const { data } = apiResponse.data
-    
+
     // Set auth data using new format
-    authStore.setAuthData(data)
-    
+    authStore.setAuthData({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      user: data.user
+    })
     message.success('Đăng nhập Google thành công!')
     router.push('/')
-    
+
   } catch (error: any) {
     console.error('Google login error:', error)
     message.error(error.response?.data?.message || error.message || 'Đăng nhập Google thất bại')
-  } finally {
-    googleLoading.value = false
   }
 }
 
@@ -195,92 +165,37 @@ const handleGoogleCallback = async (response: any) => {
 const handleLogin = async (values: any) => {
   try {
     loading.value = true
-    
-    // Demo bypass - check for demo credentials
-    if (values.username === 'admin@example.com' && values.password === '123456') {
-      // Mock successful login with new format
-      const mockAuthData = {
-        accessToken: 'demo-access-token-12345',
-        refreshToken: 'demo-refresh-token-12345',
-        user: {
-          userId: '1',
-          username: 'admin@example.com',
-          fullName: 'Admin User',
-          email: 'admin@example.com',
-          roles: ['ROLE_ADMIN', 'ROLE_USER'],
-          avatar: 'https://via.placeholder.com/32',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      }
-      
-      authStore.setAuthData(mockAuthData)
-      
-      message.success('Đăng nhập thành công!')
-      router.push('/')
-      return
-    }
-
-    // Real API call
     const response = await api.login({
       username: values.username,
       password: values.password
     })
 
+    console.log(response)
     const { data } = response.data
-    
+
     // Set auth data using new format
-    authStore.setAuthData(data)
-    
+    authStore.setAuthData({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      user: data.user
+    })
     message.success('Đăng nhập thành công!')
     router.push('/')
-    
+
   } catch (error: any) {
     console.error('Login error:', error)
-    message.error(error.response?.data?.message || error.message || 'Đăng nhập thất bại')
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      message.error('Tên đăng nhập hoặc mật khẩu không chính xác')  
+    } else if (error.response?.status >= 500) {
+      message.error('Hệ thống đang gặp sự cố. Vui lòng thử lại sau')
+    } else {
+      message.error(error.response?.data?.message || 'Đăng nhập thất bại')
+    }
+
+    // Reset password field on error
+    formState.password = ''
   } finally {
     loading.value = false
-  }
-}
-
-const handleGoogleLogin = async () => {
-  try {
-    googleLoading.value = true
-    
-    if (!window.google?.accounts?.id) {
-      message.error('Google Identity Services chưa được tải')
-      return
-    }
-
-    if (!isGoogleSDKLoaded.value) {
-      message.info('Đang tải Google Identity Services...')
-      return
-    }
-    
-    // Use Google Identity Services prompt with FedCM
-    // This requires user gesture (button click) for privacy/security
-    window.google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed()) {
-        // If One Tap is not displayed, user might not be signed in to Google
-        // or has dismissed it. This is normal behavior with FedCM.
-        console.log('Google One Tap not displayed:', notification.getNotDisplayedReason())
-        message.info('Vui lòng đăng nhập Google trước hoặc cho phép popup')
-      } else if (notification.isSkippedMoment()) {
-        // User explicitly skipped the moment
-        console.log('Google One Tap skipped')
-        message.info('Đăng nhập Google đã bị bỏ qua')
-      }
-    })
-    
-  } catch (error) {
-    console.error('Google login error:', error)
-    message.error('Lỗi khởi tạo đăng nhập Google')
-  } finally {
-    // Set loading false after a delay since prompt might be async
-    setTimeout(() => {
-      googleLoading.value = false
-    }, 1000)
   }
 }
 
@@ -344,16 +259,23 @@ declare global {
   margin-bottom: 24px;
 }
 
-.google-login-btn {
-  border: 1px solid #dadce0;
-  color: #3c4043;
-  background: #fff;
-  margin-bottom: 24px;
+.google-login-button {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+  /* Đảm bảo có chiều cao cho button */
 }
 
 .google-login-btn:hover {
   border-color: #1890ff;
   color: #1890ff;
+}
+
+.google-login-fallback {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 [data-theme="dark"] .login-box {

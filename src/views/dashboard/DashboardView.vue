@@ -2,52 +2,36 @@
   <div class="dashboard">
     <div class="dashboard-header">
       <h1>{{ $t('dashboard.title') }}</h1>
-      <p>Chào mừng bạn đến với Admin Portal</p>
+      <p class="current-time">Thời gian hiện tại: {{ currentTime }}</p>
     </div>
 
     <!-- Statistics Cards -->
     <a-row :gutter="16" class="stats-row">
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card class="stat-card" :loading="loading">
-          <a-statistic
-            :title="$t('dashboard.totalUsers')"
-            :value="stats.totalUsers"
-            :prefix="h(TeamOutlined)"
-            :value-style="{ color: '#1890ff' }"
-          />
+          <a-statistic :title="$t('dashboard.totalUsers')" :value="stats.totalUsers" :prefix="h(TeamOutlined)"
+            :value-style="{ color: '#1890ff' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card class="stat-card" :loading="loading">
-          <a-statistic
-            :title="$t('dashboard.activeUsers')"
-            :value="stats.activeUsers"
-            :prefix="h(UserOutlined)"
-            :value-style="{ color: '#52c41a' }"
-          />
+          <a-statistic :title="$t('dashboard.activeUsers')" :value="stats.activeUsers" :prefix="h(UserOutlined)"
+            :value-style="{ color: '#52c41a' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card class="stat-card" :loading="loading">
-          <a-statistic
-            :title="$t('dashboard.monthlyTests')"
-            :value="stats.monthlyTests"
-            :prefix="h(ExperimentOutlined)"
-            :value-style="{ color: '#722ed1' }"
-          />
+          <a-statistic :title="$t('dashboard.monthlyTests')" :value="stats.monthlyTests" :prefix="h(ExperimentOutlined)"
+            :value-style="{ color: '#722ed1' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card class="stat-card" :loading="loading">
-          <a-statistic
-            :title="$t('dashboard.newUsers')"
-            :value="stats.newUsers"
-            :prefix="h(PlusOutlined)"
-            :value-style="{ color: '#fa8c16' }"
-          />
+          <a-statistic :title="$t('dashboard.newUsers')" :value="stats.newUsers" :prefix="h(PlusOutlined)"
+            :value-style="{ color: '#fa8c16' }" />
         </a-card>
       </a-col>
     </a-row>
@@ -75,15 +59,10 @@
     <a-row :gutter="16" class="activities-row">
       <a-col :xs="24" :lg="16">
         <a-card title="Hoạt động gần đây" class="activities-card">
-          <a-list
-            :data-source="recentActivities"
-            :loading="loading"
-          >
+          <a-list :data-source="recentActivities" :loading="loading">
             <template #renderItem="{ item }">
               <a-list-item>
-                <a-list-item-meta
-                  :description="item.timestamp"
-                >
+                <a-list-item-meta :description="item.timestamp">
                   <template #title>
                     <span>{{ item.description }}</span>
                   </template>
@@ -101,10 +80,7 @@
 
       <a-col :xs="24" :lg="8">
         <a-card title="Thông báo" class="notifications-card">
-          <a-list
-            :data-source="notifications"
-            size="small"
-          >
+          <a-list :data-source="notifications" size="small">
             <template #renderItem="{ item }">
               <a-list-item>
                 <a-badge :status="item.type" :text="item.message" />
@@ -118,8 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
-import { message } from 'ant-design-vue'
+import { ref, onMounted, onUnmounted, h } from 'vue'
 import { APIClient } from '@/api'
 import type { DashboardStats } from '@/types'
 import {
@@ -128,6 +103,7 @@ import {
   ExperimentOutlined,
   PlusOutlined
 } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores'
 
 // Reactive data
 const loading = ref(false)
@@ -180,28 +156,53 @@ const notifications = ref([
   }
 ])
 
+const currentTime = ref('')
+let timer: NodeJS.Timer | null = null
+
+const updateTime = () => {
+  const now = new Date()
+  // Chuyển đổi sang múi giờ UTC+7
+  const utc7Time = new Date(now.getTime() + (7 * 60 * 60 * 1000))
+
+  const hours = utc7Time.getUTCHours().toString().padStart(2, '0')
+  const minutes = utc7Time.getUTCMinutes().toString().padStart(2, '0')
+  const seconds = utc7Time.getUTCSeconds().toString().padStart(2, '0')
+
+  currentTime.value = `${hours}:${minutes}:${seconds} UTC+7`
+}
+
 // Methods
 const fetchDashboardStats = async () => {
-  try {
-    loading.value = true
-    const response = await APIClient.getDashboardStats()
-    stats.value = response.data.data
-  } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
-    // Set mock data for demo
-    stats.value = {
-      totalUsers: 1250,
-      activeUsers: 145,
-      monthlyTests: 2890,
-      newUsers: 68
-    }
-  } finally {
-    loading.value = false
+  stats.value = {
+    totalUsers: 1250,
+    activeUsers: 145,
+    monthlyTests: 2890,
+    newUsers: 68
   }
+  // try {
+  //   loading.value = true
+  //   const response = await APIClient.getDashboardStats()
+  //   stats.value = response.data.data
+  // } catch (error) {
+  //   console.error('Error fetching dashboard stats:', error)
+  //   // Set mock data for demo
+
+  //   }
+  // } finally {
+  //   loading.value = false
+  // }
 }
 
 onMounted(() => {
   fetchDashboardStats()
+  updateTime() // Cập nhật ngay lập tức
+  timer = setInterval(updateTime, 1000) // Cập nhật mỗi giây
+})
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+  }
 })
 </script>
 
@@ -224,6 +225,12 @@ onMounted(() => {
 .dashboard-header p {
   color: #666;
   font-size: 16px;
+}
+
+.current-time {
+  font-size: 1.2em;
+  color: #666;
+  margin-top: 8px;
 }
 
 .stats-row {
@@ -284,4 +291,4 @@ onMounted(() => {
 [data-theme="dark"] .dashboard-header p {
   color: #ccc;
 }
-</style> 
+</style>

@@ -79,12 +79,10 @@ export interface Patient {
   updatedAt: string
 }
 
-export interface MedicalCategory {
+export interface ClinicalCategory {
   id: string
   name: string
   description: string
-  type: 'examination' | 'test'
-  isActive: boolean
   createdAt: string
   updatedAt: string
 }
@@ -94,7 +92,7 @@ export interface MedicalCase {
   patientId: string
   patient?: Patient
   categoryId: string
-  category?: MedicalCategory
+  category?: ClinicalCategory
   title: string
   description: string
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'

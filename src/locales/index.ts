@@ -3,6 +3,7 @@ import { createI18n } from 'vue-i18n'
 // Vietnamese translations
 const vi = {
   common: {
+    id: 'ID',
     search: 'Tìm kiếm',
     add: 'Thêm mới',
     edit: 'Chỉnh sửa',
@@ -55,8 +56,8 @@ const vi = {
   patient: {
     categories: {
       title: 'Danh mục khám/xét nghiệm',
-      examination: 'Khám bệnh',
-      test: 'Xét nghiệm',
+      clinicalExamination: 'Khám lâm sàng',
+      paraclinicalTest: 'Xét nghiệm cận lâm sàng',
       type: 'Loại',
       name: 'Tên danh mục',
       description: 'Mô tả'
@@ -127,8 +128,8 @@ const en = {
   patient: {
     categories: {
       title: 'Medical Categories',
-      examination: 'Examination',
-      test: 'Test',
+      clinicalExamination: 'Clinical Examination',
+      paraclinicalTest: 'Paraclinical Test',
       type: 'Type',
       name: 'Category name',
       description: 'Description'

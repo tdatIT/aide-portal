@@ -1,41 +1,24 @@
 <template>
   <a-layout class="main-layout">
     <!-- Sidebar -->
-    <a-layout-sider
-      v-model:collapsed="collapsed"
-      :trigger="null"
-      collapsible
-      width="240"
-      class="sidebar"
-      :class="{ 'sidebar-dark': isDark }"
-    >
+    <a-layout-sider v-model:collapsed="collapsed" :trigger="null" collapsible width="240" class="sidebar"
+      :class="{ 'sidebar-dark': isDark }">
       <!-- Logo -->
-      <div class="logo">
-        <img src="/vite.svg" alt="Logo" />
-        <span v-show="!collapsed" class="logo-text">Admin Portal</span>
-      </div>
+
+      <span v-show="!collapsed" class="logo-text">AIDE Admin Portal</span>
 
       <!-- Menu -->
-      <a-menu
-        v-model:selectedKeys="selectedKeys"
-        mode="inline"
-        :theme="isDark ? 'dark' : 'light'"
-        :items="menuItems"
-        @click="handleMenuClick"
-      />
+      <a-menu v-model:selectedKeys="selectedKeys" mode="inline" :theme="isDark ? 'dark' : 'light'" :items="menuItems"
+        @click="handleMenuClick" />
     </a-layout-sider>
 
     <a-layout>
       <!-- Header -->
-      <a-layout-header class="header" :class="{ 'header-dark': isDark }">
+      <a-layout-header class="header" :class="{ 'header-dark': isDark, collapsed: collapsed }">
         <div class="header-left">
-          <a-button
-            type="text"
-            :icon="h(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined)"
-            @click="toggleSidebar"
-            class="sidebar-trigger"
-          />
-          
+          <a-button type="text" :icon="h(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined)" @click="toggleSidebar"
+            class="sidebar-trigger" />
+
           <!-- Breadcrumb -->
           <a-breadcrumb class="breadcrumb">
             <a-breadcrumb-item v-for="item in breadcrumbItems" :key="item.path">
@@ -47,20 +30,11 @@
 
         <div class="header-right">
           <!-- Search -->
-          <a-input-search
-            v-model:value="searchValue"
-            :placeholder="$t('common.search')"
-            style="width: 200px; margin-right: 16px"
-            @search="handleSearch"
-          />
+          <a-input-search v-model:value="searchValue" :placeholder="$t('common.search')"
+            style="width: 200px; margin-right: 16px" @search="handleSearch" />
 
           <!-- Theme Toggle -->
-          <a-button
-            type="text"
-            :icon="h(BulbOutlined)"
-            @click="toggleTheme"
-            class="header-action"
-          />
+          <a-button type="text" :icon="h(BulbOutlined)" @click="toggleTheme" class="header-action" />
 
           <!-- Language -->
           <a-dropdown :trigger="['click']">
@@ -80,18 +54,16 @@
 
           <!-- Notifications -->
           <a-badge :count="5" :offset="[-5, 5]">
-            <a-button
-              type="text"
-              :icon="h(BellOutlined)"
-              class="header-action"
-            />
+            <a-button type="text" :icon="h(BellOutlined)" class="header-action" />
           </a-badge>
 
           <!-- User Profile -->
           <a-dropdown :trigger="['click']">
             <a-button type="text" class="user-profile">
-              <a-avatar src="https://via.placeholder.com/32" size="small" />
-              <span class="username">{{ currentUser?.name || 'Admin' }}</span>
+              <a-avatar
+                :src="currentUser?.avatar || 'https://ui-avatars.com/api/?name=' + currentUser?.fullName + '&background=random'"
+                size="small" />
+              <span class="username">{{ currentUser?.fullName || 'Admin' }}</span>
               <DownOutlined />
             </a-button>
             <template #overlay>
@@ -116,7 +88,7 @@
       </a-layout-header>
 
       <!-- Content -->
-      <a-layout-content class="content">
+      <a-layout-content class="content" :class="{ collapsed: collapsed }">
         <div class="content-wrapper">
           <router-view />
         </div>
@@ -234,11 +206,11 @@ const menuItems = computed((): MenuItem[] => [
 // Breadcrumb items
 const breadcrumbItems = computed((): BreadcrumbItem[] => {
   const items: BreadcrumbItem[] = [{ title: t('menu.dashboard'), path: '/dashboard' }]
-  
+
   if (route.meta.title) {
     items.push({ title: route.meta.title as string })
   }
-  
+
   return items
 })
 
@@ -328,45 +300,54 @@ watch(
 }
 
 .sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
   background: #fff;
   box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+  z-index: 1000;
+  overflow-y: auto;
 }
 
 .sidebar-dark {
   background: #001529;
 }
 
-.logo {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
 
 .sidebar-dark .logo {
   border-bottom-color: #303030;
 }
 
-.logo img {
-  width: 32px;
-  height: 32px;
-}
 
 .logo-text {
-  margin-left: 12px;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
-  color: #1890ff;
+  color: #00A63E;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header {
+  position: fixed;
+  right: 0;
+  top: 0;
+  left: 240px;
   background: #fff;
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  z-index: 999;
+  transition: all 0.2s;
+}
+
+.header.collapsed {
+  left: 80px;
 }
 
 .header-dark {
@@ -408,9 +389,16 @@ watch(
 }
 
 .content {
+  margin-left: 240px;
+  margin-top: 64px;
   padding: 24px;
   background: #f0f2f5;
   min-height: calc(100vh - 64px);
+  transition: all 0.2s;
+}
+
+.content.collapsed {
+  margin-left: 80px;
 }
 
 .content-wrapper {
@@ -429,4 +417,4 @@ watch(
   background: #141414;
   color: #fff;
 }
-</style> 
+</style>

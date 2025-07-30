@@ -111,7 +111,7 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('auth_token') // Simple auth check
+  const isAuthenticated = localStorage.getItem('accessToken') // Simple auth check
   
   if (to.meta.requiresAuth !== false && !isAuthenticated) {
     next('/login')
