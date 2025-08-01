@@ -8,7 +8,7 @@
     <!-- Clinical Categories -->
     <a-card class="category-card" :title="$t('patient.categories.clinicalExamination')" style="margin-bottom: 24px">
       <template #extra>
-        <a-button type="primary" @click="openModal('examination')">
+        <a-button type="primary" @click="openModal('clinical')">
           <template #icon>
             <PlusOutlined />
           </template>
@@ -17,7 +17,7 @@
       </template>
 
       <div class="table-toolbar">
-        <a-input-search v-model:value="examinationSearch"
+        <a-input-search v-model:value="clinicalCateSearch"
           :placeholder="`${$t('common.search')} ${$t('patient.categories.clinicalExamination').toLowerCase()}`"
           style="width: 300px" @search="searchExaminations" allow-clear />
       </div>
@@ -28,12 +28,15 @@
           <template v-if="column.key === 'type'">
             <a-tag color="blue">{{ $t('patient.categories.clinicalExamination') }}</a-tag>
           </template>
+          <template v-else-if="column.key === 'createdAt'">
+            {{ formatTimeDate(record.createdAt) }}
+          </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
-              <a-button type="text" size="small" @click="editRecord(record)">
+              <a-button type="text" size="small" @click="editRecord(record, 'clinical')">
                 <EditOutlined />
               </a-button>
-              <a-popconfirm title="Bạn có chắc chắn muốn xóa?" @confirm="deleteRecord(record.id)">
+              <a-popconfirm title="Bạn có chắc chắn muốn xóa?" @confirm="deleteRecord(record.id, 'clinical')">
                 <a-button type="text" danger size="small">
                   <DeleteOutlined />
                 </a-button>
@@ -47,7 +50,7 @@
     <!-- Test Categories -->
     <a-card class="category-card" :title="$t('patient.categories.paraclinicalTest')">
       <template #extra>
-        <a-button type="primary" @click="openModal('test')">
+        <a-button type="primary" @click="openModal('paraclinical')">
           <template #icon>
             <PlusOutlined />
           </template>
@@ -56,28 +59,26 @@
       </template>
 
       <div class="table-toolbar">
-        <a-input-search v-model:value="testSearch"
+        <a-input-search v-model:value="paraclinicalCateSearch"
           :placeholder="`${$t('common.search')} ${$t('patient.categories.paraclinicalTest').toLowerCase()}`"
           style="width: 300px" @search="searchTests" allow-clear />
       </div>
 
-      <a-table :columns="testColumns" :data-source="testData" :loading="testLoading" :pagination="testPagination"
-        @change="handleTestTableChange" row-key="id">
+      <a-table :columns="paraclinicalCateColumns" :data-source="paraclinicalCateData" :loading="paraclinicalCateLoading"
+        :pagination="paraclinicalCatePagination" @change="handleTestTableChange" row-key="id">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'type'">
             <a-tag color="purple">{{ $t('patient.categories.paraclinicalTest') }}</a-tag>
           </template>
-          <template v-else-if="column.key === 'isActive'">
-            <a-tag :color="record.isActive ? 'green' : 'red'">
-              {{ record.isActive ? 'Hoạt động' : 'Không hoạt động' }}
-            </a-tag>
+          <template v-else-if="column.key === 'createdAt'">
+            {{ formatTimeDate(record.createdAt) }}
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
-              <a-button type="text" size="small" @click="editRecord(record)">
+              <a-button type="text" size="small" @click="editRecord(record, 'paraclinical')">
                 <EditOutlined />
               </a-button>
-              <a-popconfirm title="Bạn có chắc chắn muốn xóa?" @confirm="deleteRecord(record.id)">
+              <a-popconfirm title="Bạn có chắc chắn muốn xóa?" @confirm="deleteRecord(record.id, 'paraclinical')">
                 <a-button type="text" danger size="small">
                   <DeleteOutlined />
                 </a-button>
@@ -106,37 +107,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from 'vue'
-import { message } from 'ant-design-vue'
-import { useI18n } from 'vue-i18n'
 import { APIClient } from '@/api'
+import { formatTimeDate } from '@/helper/date'
+import type { ClinicalCategory, ParaclinicalCategory } from '@/types'
 import {
-  PlusOutlined,
+  DeleteOutlined,
   EditOutlined,
-  DeleteOutlined
+  PlusOutlined
 } from '@ant-design/icons-vue'
-import type { TableColumn } from '@/types'
-import formatDateTime from '@/helper/date'
+import { message } from 'ant-design-vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
 // Reactive data
 const clinicalCateData = ref<ClinicalCategory[]>([])
-const testData = ref<MedicalCategory[]>([])
+const paraclinicalCateData = ref<ParaclinicalCategory[]>([])
 const clinicalCateLoading = ref(false)
-const testLoading = ref(false)
-const examinationSearch = ref('')
-const testSearch = ref('')
+const paraclinicalCateLoading = ref(false)
+const clinicalCateSearch = ref('')
+const paraclinicalCateSearch = ref('')
 const modalVisible = ref(false)
 const modalLoading = ref(false)
-const currentType = ref<'examination' | 'test'>('examination')
-const editingRecord = ref<MedicalCategory | null>(null)
+const currentType = ref<'paraclinical' | 'clinical'>('clinical')
+const editingRecord = ref<ClinicalCategory | ParaclinicalCategory | null>(null)
 
 // Form data
 const formData = reactive({
   name: '',
-  description: '',
-  isActive: true
+  description: ''
 })
 
 const formRules = {
@@ -159,7 +159,7 @@ const clinicalCatePagination = reactive({
     `${range[0]}-${range[1]} của ${total} mục`
 })
 
-const testPagination = reactive({
+const paraclinicalCatePagination = reactive({
   current: 1,
   pageSize: 10,
   total: 0,
@@ -169,18 +169,13 @@ const testPagination = reactive({
     `${range[0]}-${range[1]} của ${total} mục`
 })
 
-// Computed
+// Computed 
 const modalTitle = computed(() => {
-  const typeLabel = currentType.value === 'examination'
-    ? t('patient.categories.clinicalExamination')
-    : t('patient.categories.paraclinicalTest')
-  return editingRecord.value
-    ? `${t('common.edit')} ${typeLabel}`
-    : `${t('common.add')} ${typeLabel}`
+  const typeLabel = currentType.value === 'clinical' ? t('patient.categories.clinicalExamination') : t('patient.categories.paraclinicalTest')
+  return editingRecord.value ? `${t('common.edit')} ${typeLabel}` : `${t('common.add')} ${typeLabel}`
 })
 
-// Table columns
-const baseColumns: TableColumn[] = [
+const paraclinicalCateColumns = computed(() => [
   {
     title: t('common.id'),
     dataIndex: 'id',
@@ -190,25 +185,21 @@ const baseColumns: TableColumn[] = [
   {
     title: t('patient.categories.name'),
     dataIndex: 'name',
+    width: 250,
     key: 'name',
     sorter: true
   },
   {
     title: t('patient.categories.description'),
     dataIndex: 'description',
-    key: 'description'
-  },
-  {
-    title: t('common.status'),
-    dataIndex: 'isActive',
-    key: 'isActive',
-    width: 120
+    key: 'description',
+    width: 250
   },
   {
     title: t('common.createdAt'),
     dataIndex: 'createdAt',
     key: 'createdAt',
-    width: 180,
+    width: 220,
     sorter: true
   },
   {
@@ -217,7 +208,7 @@ const baseColumns: TableColumn[] = [
     width: 120,
     fixed: 'right'
   }
-]
+])
 
 const clinicalCateColumns = computed(() => [
   {
@@ -236,17 +227,14 @@ const clinicalCateColumns = computed(() => [
   {
     title: t('patient.categories.description'),
     dataIndex: 'description',
-    key: 'description'
+    key: 'description',
+    width: 250
   },
   {
     title: t('common.createdAt'),
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 220,
-    render: (text: string) => {
-      console.log(text)
-      return formatDateTime(text)
-    },
     sorter: true
   },
   {
@@ -256,7 +244,6 @@ const clinicalCateColumns = computed(() => [
     fixed: 'right'
   }
 ])
-const testColumns = computed(() => baseColumns)
 
 // Methods
 const fetchClinicalCategories = async () => {
@@ -270,50 +257,26 @@ const fetchClinicalCategories = async () => {
     clinicalCateData.value = response.data.data.items
     clinicalCatePagination.total = response.data.data.total
   } catch (error) {
-    message.error('Lỗi khi lấy danh mục khám bệnh')
+    message.error('Đã có lỗi xảy ra')
   } finally {
     clinicalCateLoading.value = false
   }
 }
 
-const fetchTests = async (params?: any) => {
+const fetchParaclinicalCategories = async () => {
   try {
-    testLoading.value = true
-    const response = await APIClient.getMedicalCategories({
-      type: 'test',
-      page: testPagination.current,
-      limit: testPagination.pageSize,
-      search: testSearch.value,
-      ...params
+    paraclinicalCateLoading.value = true
+    const response = await APIClient.getParaclinicalCategories({
+      page: paraclinicalCatePagination.current,
+      size: paraclinicalCatePagination.pageSize,
     })
 
-    testData.value = response.data.data.data
-    testPagination.total = response.data.data.total
+    paraclinicalCateData.value = response.data.data.items
+    paraclinicalCatePagination.total = response.data.data.total
   } catch (error) {
-    // Set mock data for demo
-    testData.value = [
-      {
-        id: '3',
-        name: 'Xét nghiệm máu tổng quát',
-        description: 'Xét nghiệm các chỉ số máu cơ bản',
-        type: 'test',
-        isActive: true,
-        createdAt: '2024-01-17T09:15:00Z',
-        updatedAt: '2024-01-17T09:15:00Z'
-      },
-      {
-        id: '4',
-        name: 'Xét nghiệm glucose',
-        description: 'Kiểm tra nồng độ đường trong máu',
-        type: 'test',
-        isActive: false,
-        createdAt: '2024-01-18T16:45:00Z',
-        updatedAt: '2024-01-18T16:45:00Z'
-      }
-    ]
-    testPagination.total = 2
+    message.error('Đã có lỗi xảy ra')
   } finally {
-    testLoading.value = false
+    paraclinicalCateLoading.value = false
   }
 }
 
@@ -323,8 +286,8 @@ const searchExaminations = () => {
 }
 
 const searchTests = () => {
-  testPagination.current = 1
-  fetchTests()
+  paraclinicalCatePagination.current = 1
+  fetchParaclinicalCategories()
 }
 
 const handleExaminationTableChange = (pagination: any, filters: any, sorter: any) => {
@@ -334,29 +297,27 @@ const handleExaminationTableChange = (pagination: any, filters: any, sorter: any
 }
 
 const handleTestTableChange = (pagination: any, filters: any, sorter: any) => {
-  testPagination.current = pagination.current
-  testPagination.pageSize = pagination.pageSize
-  fetchTests({ sorter, filters })
+  paraclinicalCatePagination.current = pagination.current
+  paraclinicalCatePagination.pageSize = pagination.pageSize
+  fetchParaclinicalCategories()
 }
 
-const openModal = (type: 'examination' | 'test') => {
+const openModal = (type: 'paraclinical' | 'clinical') => {
   currentType.value = type
   editingRecord.value = null
   Object.assign(formData, {
     name: '',
-    description: '',
-    isActive: true
+    description: ''
   })
   modalVisible.value = true
 }
 
-const editRecord = (record: MedicalCategory) => {
-  currentType.value = record.type as 'examination' | 'test'
+const editRecord = (record: ClinicalCategory | ParaclinicalCategory, type: 'clinical' | 'paraclinical') => {
+  currentType.value = type
   editingRecord.value = record
   Object.assign(formData, {
     name: record.name,
-    description: record.description,
-    isActive: record.isActive
+    description: record.description
   })
   modalVisible.value = true
 }
@@ -367,27 +328,37 @@ const handleModalOk = async () => {
 
     if (editingRecord.value) {
       // Update existing record
-      await APIClient.updateMedicalCategory(editingRecord.value.id, {
-        ...formData,
-        type: currentType.value
-      })
+      if (currentType.value === 'clinical') {
+        await APIClient.updateClinicalCategory(editingRecord.value.id, {
+          ...formData
+        })
+      } else {
+        await APIClient.updateParaclinicalCategory(editingRecord.value.id, {
+          ...formData
+        })
+      }
       message.success('Cập nhật thành công!')
     } else {
       // Create new record
-      await APIClient.createMedicalCategory({
-        ...formData,
-        type: currentType.value
-      })
+      if (currentType.value === 'clinical') {
+        await APIClient.createClinicalCategory({
+          ...formData
+        })
+      } else {
+        await APIClient.createParaclinicalCategory({
+          ...formData
+        })
+      }
       message.success('Thêm mới thành công!')
     }
 
     modalVisible.value = false
 
     // Refresh data
-    if (currentType.value === 'examination') {
+    if (currentType.value === 'clinical') {
       fetchClinicalCategories()
     } else {
-      fetchTests()
+      fetchParaclinicalCategories()
     }
   } catch (error) {
     console.error('Error saving record:', error)
@@ -395,10 +366,10 @@ const handleModalOk = async () => {
     modalVisible.value = false
 
     // Refresh data for demo
-    if (currentType.value === 'examination') {
+    if (currentType.value === 'clinical') {
       fetchClinicalCategories()
     } else {
-      fetchTests()
+      fetchParaclinicalCategories()
     }
   } finally {
     modalLoading.value = false
@@ -409,27 +380,31 @@ const handleModalCancel = () => {
   modalVisible.value = false
 }
 
-const deleteRecord = async (id: string) => {
+const deleteRecord = async (id: string, type: 'clinical' | 'paraclinical') => {
   try {
-    await APIClient.deleteMedicalCategory(id)
+    if (type === 'clinical') {
+      await APIClient.deleteClinicalCategory(id)
+    } else {
+      await APIClient.deleteParaclinicalCategory(id)
+    }
     message.success('Xóa thành công!')
 
     // Refresh data
     fetchClinicalCategories()
-    fetchTests()
+    fetchParaclinicalCategories()
   } catch (error) {
     console.error('Error deleting record:', error)
     message.success('Xóa thành công!')
 
     // Refresh data for demo
     fetchClinicalCategories()
-    fetchTests()
+    fetchParaclinicalCategories()
   }
 }
 
 onMounted(() => {
   fetchClinicalCategories()
-  fetchTests()
+  fetchParaclinicalCategories()
 })
 </script>
 

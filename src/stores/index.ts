@@ -36,7 +36,6 @@ export const useAuthStore = defineStore('auth', {
 
     // Handle auth response from new API format
     setAuthData(authData: { accessToken: string; refreshToken: string; user: User }) {
-      console.log(authData)
       localStorage.setItem('accessToken', authData.accessToken)
       localStorage.setItem('refreshToken', authData.refreshToken)
       this.setUser(authData.user)

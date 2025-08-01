@@ -1,4 +1,4 @@
-import type { AuthResponse, GoogleAuthRequest, LegacyApiResponse, LoginRequest } from '@/types'
+import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse } from '@/types'
 import { message } from 'ant-design-vue'
 import type { AxiosError, AxiosResponse } from 'axios'
 import axios from 'axios'
@@ -70,10 +70,10 @@ function handleApiError(error: AxiosError<any>) {
 }
 
 axiosClient.interceptors.response.use(
-  (response: AxiosResponse<LegacyApiResponse>) => {
+  (response: AxiosResponse<ApiResponse<any>>) => {
     return response
   },
-  (error: AxiosError<LegacyApiResponse>) => {
+  (error: AxiosError<ApiResponse<any>>) => {
     handleApiError(error)
     return Promise.reject(error)
   }
@@ -82,7 +82,7 @@ axiosClient.interceptors.response.use(
 
 // API methods
 export const APIClient = {
-  login: (credentials: LoginRequest): Promise<AxiosResponse<AuthResponse>> =>
+  login: (credentials: any): Promise<AxiosResponse<AuthResponse>> =>
     axios.post(`${AUTH_API_URL}/api/v1/auth/login`, credentials),
 
   loginWithGoogle: (request: GoogleAuthRequest): Promise<AxiosResponse<AuthResponse>> =>
@@ -106,25 +106,50 @@ export const APIClient = {
   updateRole: (id: string, data: any) => axiosClient.put(`/roles/${id}`, data),
   deleteRole: (id: string) => axiosClient.delete(`/roles/${id}`),
 
-  // Permissions
-  getPermissions: () => axiosClient.get('/permissions'),
-
   // Medical Categories
-  getClinicalCategories: (params?: any) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/clinical-cates`, { params }),
-  createMedicalCategory: (data: any) => axiosClient.post('/medical-categories', data),
-  updateMedicalCategory: (id: string, data: any) => axiosClient.put(`/medical-categories/${id}`, data),
-  deleteMedicalCategory: (id: string) => axiosClient.delete(`/medical-categories/${id}`),
+  getClinicalCategories: (params?: any) =>
+    axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/clinical-cates`, { params }),
+  createClinicalCategory: (data: any) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/clinical-cates`, data),
+  updateClinicalCategory: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/clinical-cates/${id}`, data),
+  deleteClinicalCategory: (id: string) =>
+    axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/clinical-cates/${id}`),
+  getClinicalCategory: (id: string) =>
+    axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/clinical-cates/${id}`),
 
-  // Medical Cases
-  getMedicalCases: (params?: any) => axiosClient.get('/medical-cases', { params }),
-  getMedicalCase: (id: string) => axiosClient.get(`/medical-cases/${id}`),
-  createMedicalCase: (data: any) => axiosClient.post('/medical-cases', data),
-  updateMedicalCase: (id: string, data: any) => axiosClient.put(`/medical-cases/${id}`, data),
-  deleteMedicalCase: (id: string) => axiosClient.delete(`/medical-cases/${id}`),
+  uploadImages: (formData: FormData) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/images/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }),
 
-  // Test Executions
-  getTestExecutions: (params?: any) => axiosClient.get('/test-executions', { params }),
-  getTestExecution: (id: string) => axiosClient.get(`/test-executions/${id}`),
+
+
+  getParaclinicalCategories: (params?: any) =>
+    axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/paraclinical-cates`, { params }),
+  createParaclinicalCategory: (data: any) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/paraclinical-cates`, data),
+  updateParaclinicalCategory: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/paraclinical-cates/${id}`, data),
+  deleteParaclinicalCategory: (id: string) =>
+    axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/paraclinical-cates/${id}`),
+  getParaclinicalCategory: (id: string) =>
+    axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/paraclinical-cates/${id}`),
+
+  // Patient cases
+  getPatients: (params?: any) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients`, { params }),
+  getPatient: (id: string) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
+  createExamination: (patientId: number, data: ExaminationRequest) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/patients/${patientId}/examination`, data),
+  createPatientExamination: (patientId: number, data: ExaminationRequest) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/patients/${patientId}/examination`, data),
+  createPatient: (data: CreatePatientRequest): Promise<AxiosResponse<ApiResponse<CreatePatientResponse>>> =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/patients`, data),
+  updatePatient: (id: string, data: CreatePatientRequest) =>
+    axiosClient.put(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`, data),
+  deletePatient: (id: string) => axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
 }
 
 export default axiosClient 

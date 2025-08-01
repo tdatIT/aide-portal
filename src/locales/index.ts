@@ -65,11 +65,14 @@ const vi = {
     cases: {
       title: 'Quản lý ca bệnh',
       patientName: 'Tên bệnh nhân',
+      language: 'Ngôn ngữ',
       category: 'Danh mục',
       symptoms: 'Triệu chứng',
       diagnosis: 'Chẩn đoán',
       treatment: 'Điều trị',
-      viewDetail: 'Xem chi tiết'
+      viewDetail: 'Xem chi tiết',
+      requestCount: 'Lượt TH',
+      create: 'Tạo ca bệnh'
     }
   }
 }
@@ -141,7 +144,9 @@ const en = {
       symptoms: 'Symptoms',
       diagnosis: 'Diagnosis',
       treatment: 'Treatment',
-      viewDetail: 'View detail'
+      viewDetail: 'View detail',
+      requestCount: 'Request Count',
+      create: 'Create case'
     }
   }
 }

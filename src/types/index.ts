@@ -12,18 +12,6 @@ export interface User {
   updatedAt?: string
 }
 
-// Legacy User interface for backward compatibility
-export interface LegacyUser {
-  id: string
-  email: string
-  name: string
-  avatar?: string
-  role?: UserRole
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
 export interface UserRole {
   id: string
   name: string
@@ -87,6 +75,14 @@ export interface ClinicalCategory {
   updatedAt: string
 }
 
+export interface ParaclinicalCategory {
+  id: string
+  name: string
+  description: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface MedicalCase {
   id: string
   patientId: string
@@ -131,19 +127,12 @@ export interface ApiResponse<T = any> {
   data: T
 }
 
-export interface LegacyApiResponse<T = any> {
-  success: boolean
-  data: T
-  message?: string
-  errors?: string[]
-}
-
 export interface PaginatedResponse<T = any> {
-  data: T[]
+  items: T[]
   total: number
   page: number
-  limit: number
-  totalPages: number
+  size: number
+  hasMore: boolean
 }
 
 export interface TableColumn {
@@ -172,3 +161,85 @@ export type ThemeMode = 'light' | 'dark'
 
 // Language type
 export type Language = 'vi' | 'en' 
+
+// Patient case
+export interface PatientItems {
+  id: number
+  name: string
+  language: string
+  gender: 'MALE' | 'FEMALE' | 'OTHER'
+  age: number
+  reasonForVisit: string
+  occupation: string
+  medicalHistory: string
+  dentalHistory: string
+  clinicalHistory: string
+  requestCount: number
+  images: string[] | null
+  clinicalResult: string | null
+  paraclinicalResult: string | null
+  finalDiagnosis: string | null
+  diffDiagnosis: string | null
+  treatment: string | null
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'REJECTED'
+  createdAt: string
+  updatedAt: string
+  createdBy: string
+  updatedBy: string
+}
+
+// Image upload response
+export interface UploadedImage {
+  id: number
+  publicUrl: string
+  format: string
+}
+
+export interface ImageUploadResponse {
+  images: UploadedImage[]
+}
+
+// Create patient request/response
+export interface CreatePatientRequest {
+  language: string
+  name: string
+  gender: string
+  age: number | null
+  occupation: string
+  reasonForVisit: string
+  medicalHistory: string
+  dentalHistory: string
+  clinicalHistory: string
+}
+
+export interface CreatePatientResponse {
+  patientId: number
+}
+
+export interface ClinicalResult {
+  textResult: string
+  cateId: number
+  imageIds: number[]
+}
+
+export interface ParaclinicalResult {
+  cateId: number
+  textResult: string
+  score: boolean
+  imageIds: number[]
+}
+
+export interface DifferentialDiagnosis {
+  name: string
+  score: boolean
+}
+
+export interface ExaminationRequest {
+  clinicalRs: ClinicalResult[]
+  paraclinicalRs: ParaclinicalResult[]
+  diffDiagnosis: DifferentialDiagnosis[]
+  finalDiagnosis: string
+  treatment: string
+  instruction: string
+  aiContext: string
+}

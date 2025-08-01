@@ -6,13 +6,14 @@ import timezone from 'dayjs/plugin/timezone' // plugin xử lý timezone
 // Cấu hình dayjs
 dayjs.extend(utc)
 dayjs.extend(timezone)
-dayjs.locale('vi') // Sử dụng locale tiếng Việt
+dayjs.locale('vi')
 
-// Hàm parse date
-const formatDateTime = (isoString: string): string => {
+
+// Hàm format theo định dạng HH:MM DD-MM-YYYY
+export const formatTimeDate = (isoString: string): string => {
   return dayjs(isoString)
     .tz('Asia/Ho_Chi_Minh')
-    .format('DD/MM/YYYY HH:mm')
+    .format('HH:mm  DD-MM-YYYY')
 }
 
-export default formatDateTime
+export default formatTimeDate
