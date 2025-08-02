@@ -180,8 +180,6 @@ import {
   DownloadOutlined
 } from '@ant-design/icons-vue'
 
-const { t } = useI18n()
-
 // Reactive data
 const dataSource = ref<TestExecution[]>([])
 const loading = ref(false)
@@ -433,29 +431,6 @@ const viewDetail = (record: TestExecution) => {
 const handleDetailCancel = () => {
   detailVisible.value = false
   selectedRecord.value = null
-}
-
-const exportResult = (record: TestExecution) => {
-  // Mock export functionality
-  message.success(`Đang xuất kết quả cho ${record.testName}`)
-  
-  // In real implementation, this would download a file
-  const data = {
-    userName: record.user?.name,
-    testName: record.testName,
-    score: record.score,
-    startTime: record.startTime,
-    endTime: record.endTime,
-    answers: record.answers
-  }
-  
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `test-result-${record.id}.json`
-  a.click()
-  window.URL.revokeObjectURL(url)
 }
 
 onMounted(() => {

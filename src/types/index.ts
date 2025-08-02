@@ -1,19 +1,35 @@
 // Common types for the admin portal application
 
-export interface User {
-  userId: string
+// Base User interface
+export interface BaseUser {
+  id: string
   username: string
-  fullName: string
+  fullname: string
   email: string
-  roles: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  // UI state
+  statusLoading?: boolean
+  // Legacy fields for backward compatibility
+  userId?: string
+  fullName?: string
   avatar?: string
-  isActive?: boolean
-  createdAt?: string
-  updatedAt?: string
+  role?: UserRole
+}
+
+// User for list view (without roles)
+export interface User extends BaseUser {
+  // No roles field for list view
+}
+
+// User for permissions view (with roles)
+export interface UserWithRoles extends BaseUser {
+  roles?: Role[]
 }
 
 export interface UserRole {
-  id: string
+  id: string | number
   name: string
   permissions: string[]
 }
@@ -26,7 +42,7 @@ export interface AuthResponse {
     accessToken: string
     refreshToken: string
     expiresIn: number
-    user: User
+    user: UserWithRoles
   }
 }
 
@@ -41,10 +57,13 @@ export interface LoginRequest {
 
 // Role management types
 export interface Role {
-  id: string
+  id: number
   name: string
-  description?: string
-  permissions: string[]
+  description: string
+  createdAt: string
+  updatedAt: string
+  // Legacy fields for backward compatibility
+  permissions?: string[]
 }
 
 export interface Permission {
@@ -132,7 +151,7 @@ export interface PaginatedResponse<T = any> {
   total: number
   page: number
   size: number
-  hasMore: boolean
+  has_more: boolean
 }
 
 export interface TableColumn {
@@ -181,7 +200,8 @@ export interface PatientItems {
   finalDiagnosis: string | null
   diffDiagnosis: string | null
   treatment: string | null
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'REJECTED'
+  status: 'VISIBLE' | 'HIDDEN'
+  statusLoading?: boolean
   createdAt: string
   updatedAt: string
   createdBy: string
@@ -210,6 +230,7 @@ export interface CreatePatientRequest {
   medicalHistory: string
   dentalHistory: string
   clinicalHistory: string
+  imageIds: number[]
 }
 
 export interface CreatePatientResponse {
@@ -242,4 +263,70 @@ export interface ExaminationRequest {
   treatment: string
   instruction: string
   aiContext: string
+}
+
+// Patient detail response types
+export interface PatientImage {
+  id: number
+  url: string
+}
+
+export interface ClinicalResultDetail {
+  id: number
+  clinicalCateId: number
+  testName: string
+  textResult: string
+  notes: string
+  images: PatientImage[]
+}
+
+export interface ParaclinicalResultDetail {
+  id: number
+  paraclinicalCateId: number
+  testName: string
+  textResult: string
+  notes: string
+  score: boolean
+  images: PatientImage[]
+}
+
+export interface FinalDiagnosis {
+  name: string
+}
+
+export interface DifferentialDiagnosisDetail {
+  id: number
+  name: string
+  score: boolean
+}
+
+export interface Treatment {
+  treatmentNotes: string
+}
+
+export interface PatientDetail {
+  id: number
+  name: string
+  language: string
+  gender: 'MALE' | 'FEMALE' | 'OTHER'
+  age: number
+  reasonForVisit: string
+  occupation: string
+  medicalHistory: string
+  dentalHistory: string
+  clinicalHistory: string
+  requestCount: number
+  images: PatientImage[]
+  clinicalResult: ClinicalResultDetail[]
+  paraclinicalResult: ParaclinicalResultDetail[]
+  finalDiagnosis: FinalDiagnosis
+  diffDiagnosis: DifferentialDiagnosisDetail[]
+  treatment: Treatment
+  status: 'PENDING' | 'VISIBLE' | 'HIDDEN'
+  aiContext: string
+  instruction: string
+  createdAt: string
+  updatedAt: string
+  createdBy: string
+  updatedBy: string
 }

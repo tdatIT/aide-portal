@@ -29,9 +29,16 @@
             </div>
           </template>
           <template v-else-if="column.key === 'status'">
-            <a-tag :color="getStatusColor(record.status)">
-              {{ getStatusText(record.status) }}
-            </a-tag>
+            <div class="status-toggle">
+              <a-switch 
+                :checked="record.status === 'VISIBLE'" 
+                :loading="record.statusLoading"
+                @change="(checked: boolean) => handleStatusToggle(record, checked)"
+                checked-children="ON"
+                un-checked-children="OFF"
+              />
+              <span class="status-text">{{ getStatusText(record.status) }}</span>
+            </div>
           </template>
           <template v-else-if="column.key === 'language'">
             <a-tag :color="getLanguageColor(record.language)">
@@ -60,10 +67,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { useI18n } from 'vue-i18n'
 import { APIClient } from '@/api'
 import type { PatientItems, TableColumn } from '@/types'
 import {
@@ -73,7 +79,6 @@ import {
 } from '@ant-design/icons-vue'
 import { formatTimeDate } from '@/helper/date'
 
-const { t } = useI18n()
 const router = useRouter()
 
 // Reactive data
@@ -131,8 +136,8 @@ const columns: TableColumn[] = [
     dataIndex: 'status',
     width: 120,
     filters: [
-      { text: 'Ẩn', value: 'unpublished' },
-      { text: 'Hiển thị', value: 'published' }
+      { text: 'Ẩn', value: 'HIDDEN' },
+      { text: 'Hiển thị', value: 'VISIBLE' }
     ]
   },
   {
@@ -177,37 +182,25 @@ const handleSearch = () => {
   fetchData()
 }
 
-const handleStatusFilter = () => {
-  pagination.current = 1
-  fetchData()
-}
-
 const handleTableChange = (paginationData: any, filters: any, sorter: any) => {
   pagination.current = paginationData.current
   pagination.pageSize = paginationData.pageSize
   fetchData({ sorter, filters })
 }
 
-const getStatusColor = (status: string) => {
-  const colors = {
-    unpublished: 'orange',
-    published: 'blue'
-  }
-  return colors[status as keyof typeof colors] || 'default'
-}
 
 const getLanguageColor = (language: string) => {
   const colors = {
     vi: 'blue',
-    en: 'green'
+    en: 'yellow'
   }
   return colors[language as keyof typeof colors] || 'default'
 }
 
 const getStatusText = (status: string) => {
   const texts = {
-    unpublished: 'Ẩn',
-    published: 'Hiển thị'
+    HIDDEN: 'Ẩn',
+    VISIBLE: 'Hiển thị'
   }
   return texts[status as keyof typeof texts] || status
 }
@@ -230,6 +223,27 @@ const handleCreateNew = () => {
 
 const editRecord = (record: PatientItems) => {
   router.push(`/patient/cases/${record.id}`)
+}
+
+const handleStatusToggle = async (record: PatientItems, checked: boolean) => {
+  try {
+    // Set loading state for this specific record
+    record.statusLoading = true
+    
+    const newStatus = checked ? 'VISIBLE' : 'HIDDEN'
+    
+    await APIClient.updatePatientStatus(record.id.toString(), newStatus)
+    
+    // Update local data
+    record.status = newStatus
+    
+    message.success(`Đã ${checked ? 'hiển thị' : 'ẩn'} ca bệnh thành công`)
+  } catch (error) {
+    console.error('Error updating patient status:', error)
+    message.error('Lỗi khi cập nhật trạng thái ca bệnh')
+  } finally {
+    record.statusLoading = false
+  }
 }
 
 onMounted(() => {
@@ -280,6 +294,18 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-text {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
 [data-theme="dark"] .cases-card {
   background: #1f1f1f;
   border-color: #434343;
@@ -287,5 +313,9 @@ onMounted(() => {
 
 [data-theme="dark"] .page-header p {
   color: #ccc;
+}
+
+[data-theme="dark"] .status-text {
+  color: #aaa;
 }
 </style>

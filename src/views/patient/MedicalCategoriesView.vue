@@ -290,13 +290,13 @@ const searchTests = () => {
   fetchParaclinicalCategories()
 }
 
-const handleExaminationTableChange = (pagination: any, filters: any, sorter: any) => {
+const handleExaminationTableChange = (pagination: any) => {
   clinicalCatePagination.current = pagination.current
   clinicalCatePagination.pageSize = pagination.pageSize
   fetchClinicalCategories()
 }
 
-const handleTestTableChange = (pagination: any, filters: any, sorter: any) => {
+const handleTestTableChange = (pagination: any) => {
   paraclinicalCatePagination.current = pagination.current
   paraclinicalCatePagination.pageSize = pagination.pageSize
   fetchParaclinicalCategories()

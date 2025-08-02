@@ -120,7 +120,7 @@ const router = createRouter({
 })
 
 // Navigation guard for authentication and authorization
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('accessToken')
   
   // Check if route requires authentication

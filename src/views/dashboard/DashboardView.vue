@@ -8,28 +8,28 @@
     <!-- Statistics Cards -->
     <a-row :gutter="16" class="stats-row">
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loading">
+        <a-card class="stat-card">
           <a-statistic :title="$t('dashboard.totalUsers')" :value="stats.totalUsers" :prefix="h(TeamOutlined)"
             :value-style="{ color: '#1890ff' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loading">
+        <a-card class="stat-card">
           <a-statistic :title="$t('dashboard.activeUsers')" :value="stats.activeUsers" :prefix="h(UserOutlined)"
             :value-style="{ color: '#52c41a' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loading">
+        <a-card class="stat-card">
           <a-statistic :title="$t('dashboard.monthlyTests')" :value="stats.monthlyTests" :prefix="h(ExperimentOutlined)"
             :value-style="{ color: '#722ed1' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loading">
+        <a-card class="stat-card">
           <a-statistic :title="$t('dashboard.newUsers')" :value="stats.newUsers" :prefix="h(PlusOutlined)"
             :value-style="{ color: '#fa8c16' }" />
         </a-card>
@@ -94,20 +94,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, h } from 'vue'
-import { APIClient } from '@/api'
-import type { DashboardStats } from '@/types'
 import {
-  TeamOutlined,
-  UserOutlined,
   ExperimentOutlined,
-  PlusOutlined
+  PlusOutlined,
+  TeamOutlined,
+  UserOutlined
 } from '@ant-design/icons-vue'
-import { useAuthStore } from '@/stores'
+import { h, onMounted, onUnmounted, ref } from 'vue'
 
-// Reactive data
-const loading = ref(false)
-const stats = ref<DashboardStats>({
+
+const stats = ref({
   totalUsers: 0,
   activeUsers: 0,
   monthlyTests: 0,
@@ -116,29 +112,11 @@ const stats = ref<DashboardStats>({
 
 const recentActivities = ref([
   {
-    description: 'Người dùng mới đăng ký tài khoản',
-    timestamp: '5 phút trước',
-    icon: '👤',
-    color: '#1890ff'
-  },
-  {
-    description: 'Hoàn thành bài kiểm tra về tim mạch',
-    timestamp: '15 phút trước',
+    description: 'Hệ thống khởi tạo thành công',
+    timestamp: '01/08/2025 10:00:00',
     icon: '✅',
     color: '#52c41a'
   },
-  {
-    description: 'Cập nhật thông tin ca bệnh #123',
-    timestamp: '30 phút trước',
-    icon: '📝',
-    color: '#fa8c16'
-  },
-  {
-    description: 'Thêm danh mục xét nghiệm mới',
-    timestamp: '1 giờ trước',
-    icon: '➕',
-    color: '#722ed1'
-  }
 ])
 
 const notifications = ref([
@@ -146,18 +124,11 @@ const notifications = ref([
     type: 'success' as const,
     message: 'Hệ thống hoạt động bình thường'
   },
-  {
-    type: 'warning' as const,
-    message: 'Có 3 bài kiểm tra cần duyệt'
-  },
-  {
-    type: 'error' as const,
-    message: 'Lỗi kết nối database tạm thời'
-  }
 ])
 
 const currentTime = ref('')
-let timer: NodeJS.Timer | null = null
+const loading = ref(false)
+let timer: any = null
 
 const updateTime = () => {
   const now = new Date()
@@ -173,35 +144,29 @@ const updateTime = () => {
 
 // Methods
 const fetchDashboardStats = async () => {
-  stats.value = {
-    totalUsers: 1250,
-    activeUsers: 145,
-    monthlyTests: 2890,
-    newUsers: 68
+  try {
+    loading.value = true
+    const response = await APIClient.getTotalTestCount()
+    stats.value.monthlyTests = response.data.data.total
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error)
+    message.error('Lỗi tải thống kê')
+  } finally {
+    loading.value = false
   }
-  // try {
-  //   loading.value = true
-  //   const response = await APIClient.getDashboardStats()
-  //   stats.value = response.data.data
-  // } catch (error) {
-  //   console.error('Error fetching dashboard stats:', error)
-  //   // Set mock data for demo
-
-  //   }
-  // } finally {
-  //   loading.value = false
-  // }
 }
+
+
 
 onMounted(() => {
   fetchDashboardStats()
-  updateTime() // Cập nhật ngay lập tức
-  timer = setInterval(updateTime, 1000) // Cập nhật mỗi giây
+  updateTime()
+  timer = setInterval(updateTime, 1000)
 })
 
 onUnmounted(() => {
   if (timer) {
-    clearInterval(timer)
+    clearInterval(timer as NodeJS.Timeout)
   }
 })
 </script>

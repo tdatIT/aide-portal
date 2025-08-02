@@ -1,4 +1,4 @@
-import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse } from '@/types'
+import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse, ImageUploadResponse, PatientDetail, User, UserWithRoles, PaginatedResponse, Role } from '@/types'
 import { message } from 'ant-design-vue'
 import type { AxiosError, AxiosResponse } from 'axios'
 import axios from 'axios'
@@ -94,17 +94,19 @@ export const APIClient = {
   getDashboardStats: () => axiosClient.get(`${PATIENT_API_URL}/dashboard/stats`),
 
   // Users
-  getUsers: (params?: any) => axiosClient.get('/users', { params }),
-  createUser: (data: any) => axiosClient.post('/users', data),
-  updateUser: (id: string, data: any) => axiosClient.put(`/users/${id}`, data),
-  deleteUser: (id: string) => axiosClient.delete(`/users/${id}`),
+  getUsers: (params?: any): Promise<AxiosResponse<ApiResponse<PaginatedResponse<User>>>> => 
+    axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users`, { params }),
+  getUser: (id: string): Promise<AxiosResponse<ApiResponse<UserWithRoles>>> => 
+    axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users/${id}`),
+  updateUserStatus: (id: string, isActive: boolean) => 
+    axiosClient.put(`${AUTH_API_URL}/api/v1/iam/users/${id}/status`, { isActive }),
   updateUserPermissions: (id: string, data: any) => axiosClient.put(`/users/${id}/permissions`, data),
 
   // Roles
-  getRoles: () => axiosClient.get('/roles'),
-  createRole: (data: any) => axiosClient.post('/roles', data),
-  updateRole: (id: string, data: any) => axiosClient.put(`/roles/${id}`, data),
-  deleteRole: (id: string) => axiosClient.delete(`/roles/${id}`),
+  getRoles: (): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Role>>>> => 
+    axiosClient.get(`${AUTH_API_URL}/api/v1/iam/roles`),
+  updateRoleMapping: (userId: string, roleIds: number[]) => 
+    axiosClient.patch(`${AUTH_API_URL}/api/v1/iam/role-mapping`, { userId, roleIds }),
 
   // Medical Categories
   getClinicalCategories: (params?: any) =>
@@ -118,7 +120,7 @@ export const APIClient = {
   getClinicalCategory: (id: string) =>
     axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/clinical-cates/${id}`),
 
-  uploadImages: (formData: FormData) =>
+  uploadImages: (formData: FormData): Promise<AxiosResponse<ApiResponse<ImageUploadResponse>>> =>
     axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/images/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -140,7 +142,8 @@ export const APIClient = {
 
   // Patient cases
   getPatients: (params?: any) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients`, { params }),
-  getPatient: (id: string) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
+  getPatient: (id: string): Promise<AxiosResponse<ApiResponse<PatientDetail>>> => 
+    axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
   createExamination: (patientId: number, data: ExaminationRequest) =>
     axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/patients/${patientId}/examination`, data),
   createPatientExamination: (patientId: number, data: ExaminationRequest) =>
@@ -149,7 +152,13 @@ export const APIClient = {
     axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/patients`, data),
   updatePatient: (id: string, data: CreatePatientRequest) =>
     axiosClient.put(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`, data),
+  updatePatientStatus: (id: string, status: string) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/patients/${id}/status`, { status }),
   deletePatient: (id: string) => axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
+
+  //Statistics
+  getTotalTestCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+    axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/stats/total-request-count`),
 }
 
 export default axiosClient 

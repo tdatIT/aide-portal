@@ -9,31 +9,34 @@
       <div class="user-selector">
         <a-row :gutter="16" align="middle">
           <a-col :span="8">
-            <a-form-item label="Chọn người dùng">
-              <a-select
-                v-model:value="selectedUserId"
-                placeholder="Chọn người dùng để phân quyền"
-                show-search
-                :filter-option="filterOption"
-                @change="handleUserChange"
-                :loading="usersLoading"
+            <a-form-item label="Nhập ID người dùng">
+              <a-input
+                v-model:value="userIdInput"
+                placeholder="Nhập ID người dùng (VD: 1949431646327410688)"
+                @press-enter="handleUserIdSubmit"
+                :loading="userLoading"
               >
-                <a-select-option
-                  v-for="user in users"
-                  :key="user.id"
-                  :value="user.id"
-                >
-                  {{ user.name }} ({{ user.email }})
-                </a-select-option>
-              </a-select>
+                <template #suffix>
+                  <a-button 
+                    type="primary" 
+                    size="small" 
+                    @click="handleUserIdSubmit"
+                    :loading="userLoading"
+                  >
+                    Tìm
+                  </a-button>
+                </template>
+              </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="8">
             <a-form-item label="Vai trò hiện tại">
-              <a-tag v-if="selectedUser" color="blue" size="large">
-                {{ selectedUser.role?.name || 'Chưa có vai trò' }}
-              </a-tag>
-              <span v-else>-</span>
+              <div v-if="selectedUser && selectedUser.roles && selectedUser.roles.length > 0">
+                <a-tag v-for="role in selectedUser.roles" :key="role.id" color="blue" size="large" style="margin-bottom: 4px;">
+                  {{ role.name }}
+                </a-tag>
+              </div>
+              <span v-else>Chưa có vai trò</span>
             </a-form-item>
           </a-col>
           <a-col :span="8">
@@ -55,7 +58,7 @@
 
       <div v-if="selectedUser" class="permissions-section">
         <div class="section-header">
-          <h3>Phân quyền cho: {{ selectedUser.name }}</h3>
+          <h3>Phân quyền cho: {{ selectedUser.fullname }}</h3>
           <a-space>
             <a-button @click="resetPermissions">
               <template #icon><ReloadOutlined /></template>
@@ -69,46 +72,23 @@
         </div>
 
         <a-row :gutter="24">
-          <a-col :span="12">
-            <a-card title="Vai trò hệ thống" size="small">
-              <a-radio-group v-model:value="userPermissions.roleId" @change="handleRoleChange">
-                <a-radio-button
-                  v-for="role in roles"
-                  :key="role.id"
-                  :value="role.id"
-                  style="width: 100%; margin-bottom: 8px;"
-                >
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>{{ role.name }}</span>
-                    <a-tag size="small" color="blue">{{ role.permissions.length }} quyền</a-tag>
-                  </div>
-                </a-radio-button>
-              </a-radio-group>
-            </a-card>
-          </a-col>
-
-          <a-col :span="12">
-            <a-card title="Quyền chi tiết" size="small">
-              <a-checkbox-group v-model:value="userPermissions.permissions" style="width: 100%;">
-                <div
-                  v-for="(permissions, module) in groupedPermissions"
-                  :key="module"
-                  class="permission-module"
-                >
-                  <h4>{{ getModuleName(module) }}</h4>
-                  <a-checkbox
-                    v-for="permission in permissions"
-                    :key="permission.id"
-                    :value="permission.id"
-                    style="width: 100%; margin-bottom: 8px;"
-                  >
-                    <div class="permission-item">
-                      <span>{{ permission.name }}</span>
-                      <small>{{ permission.description }}</small>
-                    </div>
-                  </a-checkbox>
-                </div>
-              </a-checkbox-group>
+          <a-col :span="24">
+            <a-card title="Phân quyền vai trò" size="small">
+              <div class="role-selection">
+                <p>Chọn vai trò cho người dùng:</p>
+                <a-checkbox-group v-model:value="selectedRoleIds">
+                  <a-row :gutter="16">
+                    <a-col :span="12" v-for="role in roles" :key="role.id">
+                      <a-checkbox :value="role.id" style="width: 100%; margin-bottom: 12px;">
+                        <div class="role-item">
+                          <div class="role-name">{{ role.name }}</div>
+                          <div class="role-description">{{ role.description }}</div>
+                        </div>
+                      </a-checkbox>
+                    </a-col>
+                  </a-row>
+                </a-checkbox-group>
+              </div>
             </a-card>
           </a-col>
         </a-row>
@@ -122,189 +102,92 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { useI18n } from 'vue-i18n'
 import { APIClient } from '@/api'
-import type { User, Role, Permission } from '@/types'
+import type { UserWithRoles, Role } from '@/types'
 import {
   ReloadOutlined,
   SaveOutlined
 } from '@ant-design/icons-vue'
 
-const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 
 // Reactive data
-const users = ref<User[]>([])
 const roles = ref<Role[]>([])
-const permissions = ref<Permission[]>([])
-const selectedUserId = ref<string>()
-const usersLoading = ref(false)
+const selectedUser = ref<UserWithRoles | null>(null)
+const selectedRoleIds = ref<number[]>([])
+const userIdInput = ref<string>('')
+const userLoading = ref(false)
 const saving = ref(false)
 
-// User permissions state
-const userPermissions = reactive({
-  roleId: '',
-  permissions: [] as string[]
-})
 
-// Computed
-const selectedUser = computed(() => 
-  users.value.find(user => user.id === selectedUserId.value)
-)
 
-const groupedPermissions = computed(() => {
-  const grouped: Record<string, Permission[]> = {}
-  permissions.value.forEach((permission: Permission) => {
-    const module = permission.module || 'general'
-    if (!grouped[module]) {
-      grouped[module] = []
-    }
-    grouped[module].push(permission)
-  })
-  return grouped
-})
+
 
 // Methods
-const fetchUsers = async () => {
+const fetchUserById = async (userId: string) => {
   try {
-    usersLoading.value = true
-    const response = await APIClient.getUsers({ limit: 1000 })
-    users.value = response.data.data.data
+    userLoading.value = true
+    const response = await APIClient.getUser(userId)
+    selectedUser.value = response.data.data
+    // Set current roles to selected
+    if (selectedUser.value?.roles) {
+      selectedRoleIds.value = selectedUser.value.roles.map((role: Role) => role.id)
+    } else {
+      selectedRoleIds.value = []
+    }
   } catch (error) {
-    // Mock data for demo
-    users.value = [
-      {
-        id: '1',
-        name: 'Nguyễn Văn Admin',
-        email: 'admin@example.com',
-        role: { id: '1', name: 'Admin', permissions: ['*'] },
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      {
-        id: '2',
-        name: 'Dr. Trần Thị B',
-        email: 'doctor.b@example.com',
-        role: { id: '2', name: 'Doctor', permissions: ['read:patients', 'write:patients'] },
-        isActive: true,
-        createdAt: '2024-01-02T00:00:00Z',
-        updatedAt: '2024-01-02T00:00:00Z'
-      },
-      {
-        id: '3',
-        name: 'Y tá Lê Văn C',
-        email: 'nurse.c@example.com',
-        role: { id: '3', name: 'Nurse', permissions: ['read:patients'] },
-        isActive: false,
-        createdAt: '2024-01-03T00:00:00Z',
-        updatedAt: '2024-01-03T00:00:00Z'
-      }
-    ]
+    console.error('Error fetching user:', error)
+    message.error('Không tìm thấy người dùng với ID này')
+    selectedUser.value = null
+    selectedRoleIds.value = []
   } finally {
-    usersLoading.value = false
+    userLoading.value = false
   }
 }
 
 const fetchRoles = async () => {
   try {
     const response = await APIClient.getRoles()
-    roles.value = response.data.data
+    roles.value = response.data.data.items
   } catch (error) {
     // Mock data for demo
     roles.value = [
       {
-        id: '1',
-        name: 'Admin',
+        id: 1,
+        name: 'ROLE_ADMIN',
         description: 'Quản trị viên hệ thống',
-        permissions: ['*']
+        createdAt: '2025-07-26T03:53:55.150728Z',
+        updatedAt: '2025-07-26T03:53:55.150728Z'
       },
       {
-        id: '2',
-        name: 'Doctor',
-        description: 'Bác sĩ',
-        permissions: ['read:patients', 'write:patients', 'read:cases', 'write:cases']
-      },
-      {
-        id: '3',
-        name: 'Nurse',
-        description: 'Y tá',
-        permissions: ['read:patients', 'read:cases']
+        id: 2,
+        name: 'ROLE_USER',
+        description: 'Người dùng thường',
+        createdAt: '2025-07-26T03:53:55.150728Z',
+        updatedAt: '2025-07-26T03:53:55.150728Z'
       }
     ]
   }
 }
 
-const fetchPermissions = async () => {
-  try {
-    const response = await APIClient.getPermissions()
-    permissions.value = response.data.data
-  } catch (error) {
-    // Mock data for demo
-    permissions.value = [
-      {
-        id: 'read:patients',
-        name: 'Xem thông tin bệnh nhân',
-        description: 'Quyền xem danh sách và thông tin bệnh nhân',
-        module: 'patient'
-      },
-      {
-        id: 'write:patients',
-        name: 'Chỉnh sửa thông tin bệnh nhân',
-        description: 'Quyền tạo mới và cập nhật thông tin bệnh nhân',
-        module: 'patient'
-      },
-      {
-        id: 'read:cases',
-        name: 'Xem ca bệnh',
-        description: 'Quyền xem danh sách và chi tiết ca bệnh',
-        module: 'case'
-      },
-      {
-        id: 'write:cases',
-        name: 'Quản lý ca bệnh',
-        description: 'Quyền tạo mới và cập nhật ca bệnh',
-        module: 'case'
-      },
-      {
-        id: 'read:users',
-        name: 'Xem người dùng',
-        description: 'Quyền xem danh sách người dùng',
-        module: 'user'
-      },
-      {
-        id: 'write:users',
-        name: 'Quản lý người dùng',
-        description: 'Quyền tạo mới và cập nhật người dùng',
-        module: 'user'
-      }
-    ]
-  }
-}
 
-const handleUserChange = (userId: string) => {
-  const user = users.value.find(u => u.id === userId)
-  if (user) {
-    userPermissions.roleId = user.role?.id || ''
-    userPermissions.permissions = user.role?.permissions || []
-  }
-}
 
-const handleRoleChange = () => {
-  const role = roles.value.find((r: Role) => r.id === userPermissions.roleId)
-  if (role) {
-    userPermissions.permissions = [...role.permissions]
+const handleUserIdSubmit = () => {
+  if (userIdInput.value.trim()) {
+    fetchUserById(userIdInput.value.trim())
+  } else {
+    message.warning('Vui lòng nhập ID người dùng')
   }
 }
 
 const resetPermissions = () => {
-  if (selectedUser.value) {
-    userPermissions.roleId = selectedUser.value.role?.id || ''
-    userPermissions.permissions = selectedUser.value.role?.permissions || []
+  if (selectedUser.value?.roles) {
+    selectedRoleIds.value = selectedUser.value.roles.map((role: Role) => role.id)
+  } else {
+    selectedRoleIds.value = []
   }
 }
 
@@ -313,53 +196,29 @@ const savePermissions = async () => {
 
   try {
     saving.value = true
-    await APIClient.updateUserPermissions(selectedUser.value.id, userPermissions)
+    await APIClient.updateRoleMapping(selectedUser.value.id, selectedRoleIds.value)
     message.success('Cập nhật phân quyền thành công!')
     
-    // Update local user data
-    const user = users.value.find(u => u.id === selectedUserId.value)
-    if (user && user.role) {
-      user.role.id = userPermissions.roleId
-      user.role.permissions = [...userPermissions.permissions]
-    }
+    // Refresh user data to show updated roles
+    await fetchUserById(selectedUser.value.id)
   } catch (error) {
-    console.error('Error updating permissions:', error)
-    message.success('Cập nhật phân quyền thành công!')
+    console.error('Error updating role mapping:', error)
+    message.error('Có lỗi xảy ra khi cập nhật phân quyền')
   } finally {
     saving.value = false
   }
 }
 
-const filterOption = (input: string, option: any) => {
-  const user = users.value.find(u => u.id === option.value)
-  if (!user) return false
-  return user.name.toLowerCase().indexOf(input.toLowerCase()) >= 0 ||
-         user.email.toLowerCase().indexOf(input.toLowerCase()) >= 0
-}
-
-const getModuleName = (module: string) => {
-  const moduleNames: Record<string, string> = {
-    patient: 'Quản lý bệnh nhân',
-    case: 'Quản lý ca bệnh',
-    user: 'Quản lý người dùng',
-    general: 'Quyền chung'
-  }
-  return moduleNames[module] || module
-}
-
 // Watch for route params
 watch(() => route.query.userId, (userId) => {
   if (userId && typeof userId === 'string') {
-    selectedUserId.value = userId
+    userIdInput.value = userId
+    fetchUserById(userId)
   }
 }, { immediate: true })
 
 onMounted(async () => {
-  await Promise.all([
-    fetchUsers(),
-    fetchRoles(),
-    fetchPermissions()
-  ])
+  await fetchRoles()
 })
 </script>
 
@@ -450,5 +309,26 @@ onMounted(async () => {
 [data-theme="dark"] .permission-module {
   border-color: #434343;
   background: #262626;
+}
+
+.role-selection p {
+  margin-bottom: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+.role-item {
+  width: 100%;
+}
+
+.role-name {
+  font-weight: 500;
+  color: #1890ff;
+  margin-bottom: 4px;
+}
+
+.role-description {
+  font-size: 12px;
+  color: #999;
 }
 </style> 

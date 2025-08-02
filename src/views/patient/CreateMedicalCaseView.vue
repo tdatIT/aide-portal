@@ -72,6 +72,11 @@
           </a-col>
         </a-row>
 
+        <!-- Image Upload Section -->
+        <a-form-item label="Hình ảnh minh họa">
+          <ImageUploader v-model="patientForm.imageIds" :max-files="5" />
+        </a-form-item>
+
         <a-form-item>
           <a-space>
             <a-button type="primary" @click="handleSubmitPatient" :loading="submitting">
@@ -129,6 +134,13 @@
                 </a-form-item>
               </a-col>
             </a-row>
+            <a-row>
+              <a-col :span="24">
+                <a-form-item :name="['clinicalRs', index, 'imageIds']" label="Hình ảnh">
+                  <ImageUploader v-model="result.imageIds" :max-files="5" />
+                </a-form-item>
+              </a-col>
+            </a-row>
           </div>
         </a-card>
 
@@ -179,6 +191,13 @@
                   <a-button type="text" danger @click="removeParaclinicalResult(index)">
                     <DeleteOutlined />
                   </a-button>
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row>
+              <a-col :span="24">
+                <a-form-item :name="['paraclinicalRs', index, 'imageIds']" label="Hình ảnh">
+                  <ImageUploader v-model="result.imageIds" :max-files="5" />
                 </a-form-item>
               </a-col>
             </a-row>
@@ -302,6 +321,7 @@
 
 <script setup lang="ts">
 import { APIClient } from '@/api'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import type { CreatePatientRequest, ExaminationRequest } from '@/types'
 import {
@@ -382,7 +402,8 @@ const patientForm = reactive<CreatePatientRequest>({
   reasonForVisit: '',
   medicalHistory: '',
   dentalHistory: '',
-  clinicalHistory: ''
+  clinicalHistory: '',
+  imageIds: []
 })
 
 // Form validation rules
@@ -449,7 +470,7 @@ const addClinicalResult = () => {
   const newResult = {
     textResult: '',
     cateId: clinicalCategories.value.length > 0 ? clinicalCategories.value[0].id : 0,
-    imageIds: [] // This property is no longer needed
+    imageIds: []
   }
   examinationForm.clinicalRs.push(newResult)
 }
@@ -464,7 +485,7 @@ const addParaclinicalResult = () => {
     cateId: paraclinicalCategories.value.length > 0 ? paraclinicalCategories.value[0].id : 0,
     textResult: '',
     score: false,
-    imageIds: [] // This property is no longer needed
+    imageIds: []
   }
   examinationForm.paraclinicalRs.push(newResult)
 }
