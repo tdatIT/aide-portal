@@ -50,6 +50,12 @@ const routes: RouteRecordRaw[] = [
             name: 'MedicalCaseDetail',
             component: () => import('@/views/patient/MedicalCaseDetailView.vue'),
             meta: { title: 'Chi tiết ca bệnh', requiresAdmin: true }
+          },
+          {
+            path: 'cases/:id/edit',
+            name: 'EditMedicalCase',
+            component: () => import('@/views/patient/EditMedicalCaseView.vue'),
+            meta: { title: 'Cập nhật ca bệnh', requiresAdmin: true }
           }
         ]
       },

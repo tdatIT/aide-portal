@@ -40,7 +40,7 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item name="age" label="Tuổi" required>
-              <a-input-number v-model:value="patientForm.age" :min="0" :max="150" placeholder="60" style="width: 100%" />
+              <a-input-number v-model:value="patientForm.age":min="0" :max="150" placeholder="60" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
@@ -397,7 +397,7 @@ const patientForm = reactive<CreatePatientRequest>({
   language: 'vi',
   name: '',
   gender: 'MALE',
-  age: null as number | null,
+  age: 50,
   occupation: '',
   reasonForVisit: '',
   medicalHistory: '',

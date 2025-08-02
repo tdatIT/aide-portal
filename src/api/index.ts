@@ -99,7 +99,7 @@ export const APIClient = {
   getUser: (id: string): Promise<AxiosResponse<ApiResponse<UserWithRoles>>> => 
     axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users/${id}`),
   updateUserStatus: (id: string, isActive: boolean) => 
-    axiosClient.put(`${AUTH_API_URL}/api/v1/iam/users/${id}/status`, { isActive }),
+    axiosClient.patch(`${AUTH_API_URL}/api/v1/iam/users/${id}/status`, { isActive }),
   updateUserPermissions: (id: string, data: any) => axiosClient.put(`/users/${id}/permissions`, data),
 
   // Roles
@@ -156,9 +156,41 @@ export const APIClient = {
     axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/patients/${id}/status`, { status }),
   deletePatient: (id: string) => axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
 
+  // Update patient profile
+  updatePatientProfile: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/patients/${id}/profile`, data),
+
+  // Clinical results management
+  createClinicalResult: (data: any) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/clinical-results`, data),
+  updateClinicalResult: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/clinical-results/${id}`, data),
+  deleteClinicalResult: (id: string) =>
+    axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/clinical-results/${id}`),
+
+  // Paraclinical results management
+  createParaclinicalResult: (data: any) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/paraclinical-results`, data),
+  updateParaclinicalResult: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/paraclinical-results/${id}`, data),
+  deleteParaclinicalResult: (id: string) =>
+    axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/paraclinical-results/${id}`),
+
+  // Update patient examination
+  updatePatientExamination: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/patients/${id}/examination`, data),
+
+  // Delete image
+  deleteImage: (id: string) =>
+    axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/images/${id}`),
+
   //Statistics
-  getTotalTestCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+  getTotalTestCount:():Promise<AxiosResponse<{total: number}>> =>
     axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/stats/total-request-count`),
+  getTotalUserCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+    axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/user`),
+  getTotalNewUserCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+    axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/new-user`),
 }
 
 export default axiosClient 

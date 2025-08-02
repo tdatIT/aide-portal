@@ -29,7 +29,7 @@ const vi = {
     dashboard: 'Trang chủ',
     patientManagement: 'Quản lý bệnh nhân',
     medicalCategories: 'Danh mục khám/xét nghiệm',
-    medicalCases: 'Ca bệnh',
+    medicalCases: 'Danh sách ca bệnh',
     testManagement: 'Quản lý kiểm tra',
     testExecutions: 'Kiểm tra thực hiện',
     userManagement: 'Quản lý người dùng',

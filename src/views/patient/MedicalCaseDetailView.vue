@@ -10,12 +10,6 @@
               </template>
               Chỉnh sửa
             </a-button>
-            <a-button type="primary" @click="printCase">
-              <template #icon>
-                <PrinterOutlined />
-              </template>
-              In báo cáo
-            </a-button>
           </a-space>
         </template>
 
@@ -57,7 +51,9 @@
                   {{ caseData.occupation }}
                 </a-descriptions-item>
                 <a-descriptions-item label="Ngôn ngữ">
-                  {{ caseData.language === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh' }}
+                  <a-tag :color="caseData.language === 'vi' ? 'blue' : 'green'">
+                    {{ caseData.language === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh' }}
+                  </a-tag>
                 </a-descriptions-item>
                 <a-descriptions-item label="Lượt thực hiện">
                   {{ caseData.requestCount }}
@@ -132,9 +128,9 @@
                     :title="result.testName" size="small" style="margin-bottom: 16px;">
                     <p><strong>Kết quả:</strong> {{ result.textResult }}</p>
                     <p v-if="result.notes"><strong>Ghi chú:</strong> {{ result.notes }}</p>
-                    <p><strong>Điểm số:</strong>
+                    <p><strong>Tính điểm:</strong>
                       <a-tag :color="result.score ? 'green' : 'red'">
-                        {{ result.score ? 'Đạt' : 'Không đạt' }}
+                        {{ result.score ? 'Có' : 'Không' }}
                       </a-tag>
                     </p>
                     <div v-if="result.images?.length" style="margin-top: 12px;">
@@ -169,7 +165,7 @@
                           <a-space>
                             <span>{{ diagnosis.name }}</span>
                             <a-tag :color="diagnosis.score ? 'green' : 'orange'">
-                              {{ diagnosis.score ? 'Khả thi' : 'Cần xem xét' }}
+                              {{ diagnosis.score ? 'Tính điểm' : 'Không tính điểm' }}
                             </a-tag>
                           </a-space>
                         </div>
@@ -292,7 +288,7 @@ const goBack = () => {
 }
 
 const editCase = () => {
-  message.info('Chức năng chỉnh sửa sẽ được triển khai')
+  router.push(`/patient/cases/${route.params.id}/edit`)
 }
 
 const printCase = () => {

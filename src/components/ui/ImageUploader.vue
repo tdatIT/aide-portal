@@ -1,7 +1,20 @@
 <template>
   <div class="image-uploader">
-    <div class="uploaded-images" v-if="uploadedImages.length > 0">
-      <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-item">
+    <div class="uploaded-images" v-if="totalImageCount > 0">
+      <!-- Existing images -->
+      <div v-for="(image, index) in (existingImages || [])" :key="`existing-${image.id}`" class="image-item">
+        <div class="image-preview">
+          <img :src="image.url" :alt="`Existing ${index + 1}`" />
+          <div class="image-overlay">
+            <a-button type="text" danger size="small" @click="removeExistingImage(image.id)">
+              <DeleteOutlined />
+            </a-button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Newly uploaded images -->
+      <div v-for="(image, index) in uploadedImages" :key="`uploaded-${image.id}`" class="image-item">
         <div class="image-preview">
           <img :src="image.publicUrl" :alt="`Upload ${index + 1}`" />
           <div class="image-overlay">
@@ -20,10 +33,10 @@
       :show-upload-list="false"
       multiple
       accept="image/*"
-      :disabled="uploadedImages.length >= maxFiles || uploading"
+      :disabled="totalImageCount >= maxFiles || uploading"
     >
       <a-button 
-        :disabled="uploadedImages.length >= maxFiles || uploading" 
+        :disabled="totalImageCount >= maxFiles || uploading" 
         :loading="uploading"
         type="dashed"
         style="width: 100%; height: 100px; display: flex; align-items: center; justify-content: center; flex-direction: column;"
@@ -48,7 +61,7 @@ import type { UploadedImage } from '@/types'
 import { DeleteOutlined, PlusOutlined, LoadingOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 interface Props {
   modelValue: number[]
@@ -79,6 +92,30 @@ watch(() => props.modelValue, (newIds) => {
     uploadedImages.value = []
   }
 }, { immediate: true })
+
+// Track existing images (for edit mode)
+const existingImages = ref<{id: number, url: string}[]>([])
+
+// Computed property for total image count
+const totalImageCount = computed(() => {
+  return uploadedImages.value.length + (existingImages.value?.length || 0)
+})
+
+// Method to set existing images (for edit mode)
+const setExistingImages = (images: {id: number, url: string}[]) => {
+  existingImages.value = images || []
+}
+
+// Method to clear existing images
+const clearExistingImages = () => {
+  existingImages.value = []
+}
+
+// Expose methods to parent component
+defineExpose({
+  setExistingImages,
+  clearExistingImages
+})
 
 // Keep track of files being processed
 const pendingFiles = ref<File[]>([])
@@ -111,9 +148,9 @@ const beforeUpload: UploadProps['beforeUpload'] = async (file) => {
     pendingFiles.value = []
     
     // Check total files including current selection
-    const totalFilesAfterUpload = uploadedImages.value.length + filesToProcess.length
+    const totalFilesAfterUpload = totalImageCount.value + filesToProcess.length
     if (totalFilesAfterUpload > props.maxFiles) {
-      message.error(`Chỉ có thể tải lên tối đa ${props.maxFiles} ảnh! Hiện tại: ${uploadedImages.value.length}, đang chọn: ${filesToProcess.length}`)
+      message.error(`Chỉ có thể tải lên tối đa ${props.maxFiles} ảnh! Hiện tại: ${totalImageCount.value}, đang chọn: ${filesToProcess.length}`)
       return
     }
     
@@ -185,6 +222,29 @@ const removeImage = (index: number) => {
   emit('update:modelValue', newImageIds)
   
   message.success('Đã xóa ảnh')
+}
+
+const removeExistingImage = async (imageId: number) => {
+  try {
+    await APIClient.deleteImage(imageId.toString())
+    
+    // Remove from existing images
+    if (existingImages.value) {
+      const index = existingImages.value.findIndex(img => img.id === imageId)
+      if (index > -1) {
+        existingImages.value.splice(index, 1)
+      }
+    }
+    
+    // Update model value by removing the image ID
+    const newImageIds = props.modelValue.filter(id => id !== imageId)
+    emit('update:modelValue', newImageIds)
+    
+    message.success('Đã xóa ảnh')
+  } catch (error) {
+    console.error('Error deleting image:', error)
+    message.error('Lỗi khi xóa ảnh')
+  }
 }
 
 const removeFile = (file: any) => {

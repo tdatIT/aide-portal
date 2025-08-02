@@ -222,7 +222,7 @@ const handleCreateNew = () => {
 }
 
 const editRecord = (record: PatientItems) => {
-  router.push(`/patient/cases/${record.id}`)
+  router.push(`/patient/cases/${record.id}/edit`)
 }
 
 const handleStatusToggle = async (record: PatientItems, checked: boolean) => {

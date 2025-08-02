@@ -53,7 +53,7 @@
           </a-dropdown>
 
           <!-- Notifications -->
-          <a-badge :count="5" :offset="[-5, 5]">
+          <a-badge :count="0" :offset="[-5, 5]">
             <a-button type="text" :icon="h(BellOutlined)" class="header-action" />
           </a-badge>
 
