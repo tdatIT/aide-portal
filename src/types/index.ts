@@ -121,7 +121,7 @@ export interface MedicalCase {
 export interface TestExecution {
   id: string
   userId: string
-  user?: User
+  user?: any
   testId: string
   testName: string
   startTime: string

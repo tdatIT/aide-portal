@@ -111,10 +111,17 @@ const clearExistingImages = () => {
   existingImages.value = []
 }
 
+// Method to clear uploaded images
+const clearUploadedImages = () => {
+  uploadedImages.value = []
+  fileList.value = []
+}
+
 // Expose methods to parent component
 defineExpose({
   setExistingImages,
-  clearExistingImages
+  clearExistingImages,
+  clearUploadedImages
 })
 
 // Keep track of files being processed

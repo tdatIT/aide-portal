@@ -219,8 +219,7 @@ import type { PatientDetail } from '@/types'
 import {
   CheckCircleOutlined,
   EditOutlined,
-  FileTextOutlined,
-  PrinterOutlined
+  FileTextOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { onMounted, ref } from 'vue'
@@ -289,10 +288,6 @@ const goBack = () => {
 
 const editCase = () => {
   router.push(`/patient/cases/${route.params.id}/edit`)
-}
-
-const printCase = () => {
-  window.print()
 }
 
 onMounted(() => {

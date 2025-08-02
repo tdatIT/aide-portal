@@ -309,7 +309,7 @@ import {
   SaveOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -325,7 +325,6 @@ const activeTab = ref('profile')
 // Modal state for category selection
 const showCategoryModal = ref(false)
 const selectedCategoryType = ref<'clinical' | 'paraclinical'>('clinical')
-const selectedCategoryId = ref<number>(0)
 const modalSubmitting = ref(false)
 const modalFormRef = ref()
 const modalImageUploader = ref()
@@ -464,7 +463,7 @@ const fetchCaseDetail = async () => {
           uploader.setExistingImages(result.images)
         }
       })
-    }, 200)
+    }, 500) // Increased delay to ensure all components are mounted
 
     // Populate diagnosis form
     Object.assign(diagnosisForm, {
@@ -506,6 +505,8 @@ const handleUpdateProfile = async () => {
     await APIClient.updatePatientProfile(caseId.value, profileForm)
     message.success('Cập nhật thông tin thành công')
     
+    // Clear uploaded images before refresh to prevent duplicates
+    clearAllUploadedImages()
     // Refresh entire page
     await refreshPage()
   } catch (error: any) {
@@ -548,6 +549,53 @@ const refreshExistingImages = () => {
   }, 100)
 }
 
+// Method to clear all uploaded images from ImageUploaders
+const clearAllUploadedImages = () => {
+  // Clear profile uploader
+  if (profileImageUploader.value) {
+    profileImageUploader.value.clearUploadedImages()
+  }
+
+  // Clear clinical results uploaders
+  clinicalImageUploaders.value.forEach(uploader => {
+    if (uploader) {
+      uploader.clearUploadedImages()
+    }
+  })
+
+  // Clear paraclinical results uploaders
+  paraclinicalImageUploaders.value.forEach(uploader => {
+    if (uploader) {
+      uploader.clearUploadedImages()
+    }
+  })
+}
+
+// Method to refresh images when tab changes
+const refreshImagesOnTabChange = () => {
+  setTimeout(() => {
+    if (activeTab.value === 'clinical') {
+      // Refresh clinical results images
+      clinicalResults.value.forEach((result, index) => {
+        const uploader = clinicalImageUploaders.value[index]
+        if (uploader && result.images && result.images.length > 0) {
+          uploader.clearExistingImages()
+          uploader.setExistingImages(result.images)
+        }
+      })
+    } else if (activeTab.value === 'paraclinical') {
+      // Refresh paraclinical results images
+      paraclinicalResults.value.forEach((result, index) => {
+        const uploader = paraclinicalImageUploaders.value[index]
+        if (uploader && result.images && result.images.length > 0) {
+          uploader.clearExistingImages()
+          uploader.setExistingImages(result.images)
+        }
+      })
+    }
+  }, 300) // Increased delay to ensure components are mounted
+}
+
 // Clinical results
 const addClinicalResult = () => {
   selectedCategoryType.value = 'clinical'
@@ -555,7 +603,7 @@ const addClinicalResult = () => {
   showCategoryModal.value = true
 }
 
-const saveClinicalResult = async (result: any, index: number) => {
+const saveClinicalResult = async (result: any, _index: number) => {
   try {
     result.saving = true
     
@@ -578,6 +626,8 @@ const saveClinicalResult = async (result: any, index: number) => {
     }
     
     message.success('Lưu kết quả khám lâm sàng thành công')
+    // Clear uploaded images before refresh to prevent duplicates
+    clearAllUploadedImages()
     // Refresh entire page after successful save
     await refreshPage()
   } catch (error) {
@@ -613,7 +663,7 @@ const addParaclinicalResult = () => {
   showCategoryModal.value = true
 }
 
-const saveParaclinicalResult = async (result: any, index: number) => {
+const saveParaclinicalResult = async (result: any, _index: number) => {
   try {
     result.saving = true
     
@@ -638,6 +688,8 @@ const saveParaclinicalResult = async (result: any, index: number) => {
     }
     
     message.success('Lưu kết quả khám cận lâm sàng thành công')
+    // Clear uploaded images before refresh to prevent duplicates
+    clearAllUploadedImages()
     // Refresh entire page after successful save
     await refreshPage()
   } catch (error) {
@@ -675,6 +727,8 @@ const handleUpdateDiagnosis = async () => {
       treatment: diagnosisForm.treatment
     })
     message.success('Cập nhật chẩn đoán thành công')
+    // Clear uploaded images before refresh to prevent duplicates
+    clearAllUploadedImages()
     // Refresh entire page after successful update
     await refreshPage()
   } catch (error) {
@@ -701,7 +755,11 @@ const refreshPage = async () => {
     // Set existing images after a delay to ensure components are mounted
     setTimeout(() => {
       refreshExistingImages()
-    }, 200)
+      // Also refresh images for current tab
+      if (activeTab.value === 'clinical' || activeTab.value === 'paraclinical') {
+        refreshImagesOnTabChange()
+      }
+    }, 500)
   } catch (error) {
     console.error('Error refreshing page:', error)
     message.error('Lỗi khi tải lại trang')
@@ -735,6 +793,7 @@ const resetModalForm = () => {
   modalForm.imageIds = []
   if (modalImageUploader.value) {
     modalImageUploader.value.clearExistingImages()
+    modalImageUploader.value.clearUploadedImages()
   }
 }
 
@@ -770,6 +829,8 @@ const handleCategorySelection = async () => {
     showCategoryModal.value = false
     resetModalForm()
     
+    // Clear uploaded images before refresh to prevent duplicates
+    clearAllUploadedImages()
     // Refresh entire page after successful creation
     await refreshPage()
   } catch (error: any) {
@@ -783,6 +844,13 @@ const handleCategorySelection = async () => {
     modalSubmitting.value = false
   }
 }
+
+// Watch for tab changes to refresh images
+watch(activeTab, (newTab) => {
+  if (newTab === 'clinical' || newTab === 'paraclinical') {
+    refreshImagesOnTabChange()
+  }
+})
 
 onMounted(() => {
   fetchCaseDetail()

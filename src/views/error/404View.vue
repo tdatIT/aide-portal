@@ -2,7 +2,6 @@
   <div class="error-container">
     <div class="error-content">
       <div class="error-illustration">
-        <img src="/vite.svg" alt="404" class="error-image" />
         <div class="error-code">404</div>
       </div>
       

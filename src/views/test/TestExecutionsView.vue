@@ -7,43 +7,23 @@
 
     <a-card class="execution-card">
       <div class="table-toolbar">
-        <a-input-search
-          v-model:value="searchValue"
-          :placeholder="`${$t('common.search')} lượt kiểm tra`"
-          style="width: 300px"
-          @search="handleSearch"
-          allow-clear
-        />
-        
+        <a-input-search v-model:value="searchValue" :placeholder="`${$t('common.search')} lượt kiểm tra`"
+          style="width: 300px" @search="handleSearch" allow-clear />
+
         <a-space>
-          <a-select
-            v-model:value="statusFilter"
-            placeholder="Lọc theo trạng thái"
-            style="width: 150px"
-            allow-clear
-            @change="handleStatusFilter"
-          >
+          <a-select v-model:value="statusFilter" placeholder="Lọc theo trạng thái" style="width: 150px" allow-clear
+            @change="handleStatusFilter">
             <a-select-option value="started">Đang làm</a-select-option>
             <a-select-option value="completed">Hoàn thành</a-select-option>
             <a-select-option value="abandoned">Đã bỏ</a-select-option>
           </a-select>
 
-          <a-date-picker
-            v-model:value="dateFilter"
-            placeholder="Lọc theo ngày"
-            @change="handleDateFilter"
-          />
+          <a-date-picker v-model:value="dateFilter" placeholder="Lọc theo ngày" @change="handleDateFilter" />
         </a-space>
       </div>
 
-      <a-table
-        :columns="columns"
-        :data-source="dataSource"
-        :loading="loading"
-        :pagination="pagination"
-        @change="handleTableChange"
-        row-key="id"
-      >
+      <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="pagination"
+        @change="handleTableChange" row-key="id">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'user'">
             <div class="user-info">
@@ -59,12 +39,8 @@
             </a-tag>
           </template>
           <template v-else-if="column.key === 'score'">
-            <a-progress
-              v-if="record.score !== null && record.score !== undefined"
-              :percent="record.score"
-              size="small"
-              :status="getScoreStatus(record.score)"
-            />
+            <a-progress v-if="record.score !== null && record.score !== undefined" :percent="record.score" size="small"
+              :status="getScoreStatus(record.score)" />
             <span v-else class="text-muted">Chưa có điểm</span>
           </template>
           <template v-else-if="column.key === 'duration'">
@@ -79,15 +55,6 @@
                 <EyeOutlined />
                 Xem chi tiết
               </a-button>
-              <a-button 
-                type="text" 
-                size="small" 
-                @click="exportResult(record)"
-                v-if="record.status === 'completed'"
-              >
-                <DownloadOutlined />
-                Xuất kết quả
-              </a-button>
             </a-space>
           </template>
         </template>
@@ -95,13 +62,8 @@
     </a-card>
 
     <!-- Detail Modal -->
-    <a-modal
-      v-model:open="detailVisible"
-      title="Chi tiết lượt kiểm tra"
-      @cancel="handleDetailCancel"
-      width="800px"
-      :footer="null"
-    >
+    <a-modal v-model:open="detailVisible" title="Chi tiết lượt kiểm tra" @cancel="handleDetailCancel" width="800px"
+      :footer="null">
       <div v-if="selectedRecord">
         <a-descriptions :column="2" bordered>
           <a-descriptions-item label="Người dùng">
@@ -121,12 +83,8 @@
             </a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="Điểm số">
-            <a-progress
-              v-if="selectedRecord.score !== null && selectedRecord.score !== undefined"
-              :percent="selectedRecord.score"
-              size="small"
-              :status="getScoreStatus(selectedRecord.score)"
-            />
+            <a-progress v-if="selectedRecord.score !== null && selectedRecord.score !== undefined"
+              :percent="selectedRecord.score" size="small" :status="getScoreStatus(selectedRecord.score)" />
             <span v-else class="text-muted">Chưa có điểm</span>
           </a-descriptions-item>
           <a-descriptions-item label="Thời gian bắt đầu">
@@ -144,18 +102,15 @@
         </a-descriptions>
 
         <a-divider>Câu trả lời</a-divider>
-        
+
         <div v-if="selectedRecord.answers && selectedRecord.answers.length > 0">
           <a-collapse>
-            <a-collapse-panel 
-              v-for="(answer, index) in selectedRecord.answers" 
-              :key="index"
-              :header="`Câu ${index + 1}: ${answer.question}`"
-            >
+            <a-collapse-panel v-for="(answer, index) in selectedRecord.answers" :key="index"
+              :header="`Câu ${index + 1}: ${answer.question}`">
               <p><strong>Câu trả lời:</strong> {{ answer.userAnswer }}</p>
               <p><strong>Đáp án đúng:</strong> {{ answer.correctAnswer }}</p>
               <p>
-                <strong>Kết quả:</strong> 
+                <strong>Kết quả:</strong>
                 <a-tag :color="answer.isCorrect ? 'green' : 'red'">
                   {{ answer.isCorrect ? 'Đúng' : 'Sai' }}
                 </a-tag>
@@ -170,15 +125,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
-import { message } from 'ant-design-vue'
-import { useI18n } from 'vue-i18n'
-import { APIClient } from '@/api'
-import type { TestExecution, TableColumn } from '@/types'
+import type { TableColumn, TestExecution } from '@/types'
 import {
-  EyeOutlined,
-  DownloadOutlined
+  EyeOutlined
 } from '@ant-design/icons-vue'
+import { onMounted, reactive, ref } from 'vue'
 
 // Reactive data
 const dataSource = ref<TestExecution[]>([])
@@ -196,7 +147,7 @@ const pagination = reactive({
   total: 0,
   showSizeChanger: true,
   showQuickJumper: true,
-  showTotal: (total: number, range: [number, number]) => 
+  showTotal: (total: number, range: [number, number]) =>
     `${range[0]}-${range[1]} của ${total} lượt kiểm tra`
 })
 
@@ -250,22 +201,7 @@ const columns: TableColumn[] = [
 ]
 
 // Methods
-const fetchData = async (params?: any) => {
-  try {
-    loading.value = true
-    const response = await APIClient.getTestExecutions({
-      page: pagination.current,
-      limit: pagination.pageSize,
-      search: searchValue.value,
-      status: statusFilter.value,
-      date: dateFilter.value,
-      ...params
-    })
-    
-    dataSource.value = response.data.data.data
-    pagination.total = response.data.data.total
-  } catch (error) {
-    // Set mock data for demo
+const fetchData = async () => {
     dataSource.value = [
       {
         id: '1',
@@ -324,11 +260,11 @@ const fetchData = async (params?: any) => {
           updatedAt: '2024-01-01T00:00:00Z'
         },
         testId: '2',
-                 testName: 'Đánh giá sức khỏe tổng quát',
-         startTime: '2024-01-21T10:15:00Z',
-         endTime: undefined,
-         score: undefined,
-         status: 'started',
+        testName: 'Đánh giá sức khỏe tổng quát',
+        startTime: '2024-01-21T10:15:00Z',
+        endTime: undefined,
+        score: undefined,
+        status: 'started',
         answers: [],
         createdAt: '2024-01-21T10:15:00Z'
       },
@@ -350,19 +286,16 @@ const fetchData = async (params?: any) => {
           updatedAt: '2024-01-01T00:00:00Z'
         },
         testId: '3',
-                 testName: 'Kiểm tra thần kinh',
-         startTime: '2024-01-19T14:00:00Z',
-         endTime: '2024-01-19T14:10:00Z',
-         score: undefined,
-         status: 'abandoned',
+        testName: 'Kiểm tra thần kinh',
+        startTime: '2024-01-19T14:00:00Z',
+        endTime: '2024-01-19T14:10:00Z',
+        score: undefined,
+        status: 'abandoned',
         answers: [],
         createdAt: '2024-01-19T14:00:00Z'
       }
     ]
     pagination.total = 3
-  } finally {
-    loading.value = false
-  }
 }
 
 const getStatusColor = (status: string) => {
@@ -417,10 +350,10 @@ const handleDateFilter = () => {
   fetchData()
 }
 
-const handleTableChange = (paginationData: any, filters: any, sorter: any) => {
+const handleTableChange = (paginationData: any, _filters: any, _sorter: any) => {
   pagination.current = paginationData.current
   pagination.pageSize = paginationData.pageSize
-  fetchData({ sorter, filters })
+  fetchData()
 }
 
 const viewDetail = (record: TestExecution) => {
@@ -502,4 +435,4 @@ onMounted(() => {
     align-items: stretch;
   }
 }
-</style> 
+</style>

@@ -2,7 +2,6 @@
   <div class="error-container">
     <div class="error-content">
       <div class="error-illustration">
-        <img src="/vite.svg" alt="500" class="error-image" />
         <div class="error-code">500</div>
       </div>
       

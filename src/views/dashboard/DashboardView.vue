@@ -114,7 +114,6 @@ import {
 } from '@ant-design/icons-vue'
 import { h, onMounted, onUnmounted, ref, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { useI18n } from 'vue-i18n'
 import { APIClient } from '@/api'
 
 // Types
