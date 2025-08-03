@@ -180,6 +180,14 @@ export const APIClient = {
   updatePatientExamination: (id: string, data: any) =>
     axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/patients/${id}/examination`, data),
 
+  // Differential diagnosis management
+  createDiffDiagnosis: (data: any) =>
+    axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/diff-diagnoses`, data),
+  updateDiffDiagnosis: (id: string, data: any) =>
+    axiosClient.patch(`${PATIENT_API_URL}/api/v1/admin/diff-diagnoses/${id}`, data),
+  deleteDiffDiagnosis: (id: string) =>
+    axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/diff-diagnoses/${id}`),
+
   // Delete image
   deleteImage: (id: string) =>
     axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/images/${id}`),

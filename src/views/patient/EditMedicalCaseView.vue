@@ -209,7 +209,52 @@
             </a-card>
           </a-tab-pane>
 
-          <!-- Tab 4: Chẩn đoán -->
+          <!-- Tab 4: Chẩn đoán phân biệt -->
+          <a-tab-pane key="differential" tab="Chẩn đoán phân biệt">
+            <a-card title="Danh sách chẩn đoán phân biệt" class="edit-card">
+              <template #extra>
+                <a-button type="primary" size="small" @click="addDiffDiagnosis">
+                  <PlusOutlined />
+                  Thêm chẩn đoán
+                </a-button>
+              </template>
+
+              <div v-if="diffDiagnoses.length === 0" class="empty-section">
+                <p>Chưa có chẩn đoán phân biệt nào. Nhấn "Thêm chẩn đoán" để bắt đầu.</p>
+              </div>
+
+              <div v-for="(diagnosis, index) in diffDiagnoses" :key="diagnosis.id || index" class="result-item">
+                <a-row :gutter="16">
+                  <a-col :span="16">
+                    <a-form-item :name="['diffDiagnoses', index, 'name']" label="Tên chẩn đoán">
+                      <a-input v-model:value="diagnosis.name" placeholder="Nhập tên chẩn đoán phân biệt" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item :name="['diffDiagnoses', index, 'score']" label="Tính điểm">
+                      <a-checkbox v-model:checked="diagnosis.score">
+                        Có
+                      </a-checkbox>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <div class="result-footer">
+                  <a-space>
+                    <a-button type="primary" @click="saveDiffDiagnosis(diagnosis, index)" :loading="diagnosis.saving">
+                      <SaveOutlined />
+                      Lưu
+                    </a-button>
+                    <a-button danger @click="removeDiffDiagnosis(diagnosis, index)">
+                      <DeleteOutlined />
+                      Xóa
+                    </a-button>
+                  </a-space>
+                </div>
+              </div>
+            </a-card>
+          </a-tab-pane>
+
+          <!-- Tab 5: Chẩn đoán -->
           <a-tab-pane key="diagnosis" tab="Chẩn đoán">
             <a-card title="Thông tin chẩn đoán" class="edit-card">
               <a-form ref="diagnosisFormRef" :model="diagnosisForm" layout="vertical">
@@ -382,6 +427,9 @@ const clinicalResults = ref<any[]>([])
 // Paraclinical results
 const paraclinicalResults = ref<any[]>([])
 
+// Differential diagnoses
+const diffDiagnoses = ref<any[]>([])
+
 // Form validation rules
 const profileFormRules = {
   name: [{ required: true, message: 'Vui lòng nhập tên ca bệnh', trigger: 'blur' }],
@@ -398,7 +446,6 @@ const fetchCaseDetail = async () => {
     caseId.value = id
     const response = await APIClient.getPatient(id)
     caseData.value = response.data.data
-    console.log(response.data.data)
     // Populate profile form
     Object.assign(profileForm, {
       name: caseData.value.name,
@@ -437,6 +484,14 @@ const fetchCaseDetail = async () => {
       saving: false
     }))
     paraclinicalImageUploaders.value = []
+
+    // Populate differential diagnoses
+    diffDiagnoses.value = caseData.value.diffDiagnosis?.map((diagnosis: any) => ({
+      id: diagnosis.id,
+      name: diagnosis.name,
+      score: diagnosis.score,
+      saving: false
+    })) || []
 
     // Set existing images for ImageUploader after data is populated
     setTimeout(() => {
@@ -715,6 +770,64 @@ const removeParaclinicalResult = async (result: any, index: number) => {
   } catch (error) {
     console.error('Error deleting paraclinical result:', error)
     message.error('Lỗi khi xóa kết quả khám cận lâm sàng')
+  }
+}
+
+// Differential diagnosis methods
+const addDiffDiagnosis = () => {
+  diffDiagnoses.value.push({
+    id: null,
+    name: '',
+    score: false,
+    saving: false
+  })
+}
+
+const saveDiffDiagnosis = async (diagnosis: any, _index: number) => {
+  try {
+    diagnosis.saving = true
+    
+    if (diagnosis.id) {
+      // Update existing
+      await APIClient.updateDiffDiagnosis(diagnosis.id.toString(), {
+        name: diagnosis.name,
+        score: diagnosis.score
+      })
+    } else {
+      // Create new
+      const response = await APIClient.createDiffDiagnosis({
+        name: diagnosis.name,
+        score: diagnosis.score,
+        patientId: parseInt(caseId.value)
+      })
+      diagnosis.id = response.data.data.id
+    }
+    
+    message.success('Lưu chẩn đoán phân biệt thành công')
+    // Refresh entire page after successful save
+    await refreshPage()
+  } catch (error) {
+    console.error('Error saving differential diagnosis:', error)
+    message.error('Lỗi khi lưu chẩn đoán phân biệt')
+  } finally {
+    diagnosis.saving = false
+  }
+}
+
+const removeDiffDiagnosis = async (diagnosis: any, index: number) => {
+  if (!diagnosis.id) {
+    diffDiagnoses.value.splice(index, 1)
+    return
+  }
+
+  try {
+    await APIClient.deleteDiffDiagnosis(diagnosis.id.toString())
+    message.success('Xóa chẩn đoán phân biệt thành công')
+    // Refresh entire page after successful delete
+    await refreshPage()
+  } catch (error) {
+    console.error('Error deleting differential diagnosis:', error)
+    message.error('Lỗi khi xóa chẩn đoán phân biệt')
   }
 }
 
