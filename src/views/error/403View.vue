@@ -44,10 +44,6 @@ const goHome = () => {
   router.push('/')
 }
 
-const goBack = () => {
-  router.go(-1)
-}
-
 const handleLogin = async () => {
   isLoading.value = true
   try {
