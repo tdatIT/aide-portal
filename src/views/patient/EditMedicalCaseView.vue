@@ -321,7 +321,7 @@
           </a-col>
         </a-row>
 
-        <a-form-item name="textResult" label="Kết quả" required>
+        <a-form-item name="textResult" label="Kết quả">
           <a-textarea 
             v-model:value="modalForm.textResult" 
             :rows="4" 
@@ -385,7 +385,6 @@ const modalForm = reactive({
 // Modal form validation rules
 const modalFormRules = {
   categoryId: [{ required: true, message: 'Vui lòng chọn danh mục khám', trigger: 'change' }],
-  textResult: [{ required: true, message: 'Vui lòng nhập kết quả khám', trigger: 'blur' }]
 }
 
 // Form refs
@@ -463,7 +462,7 @@ const fetchCaseDetail = async () => {
     })
 
     // Populate clinical results
-    clinicalResults.value = caseData.value.clinicalResult.map(result => ({
+    clinicalResults.value = caseData.value.clinicalResult?.map(result => ({
       id: result.id,
       clinicalCateId: result.clinicalCateId,
       textResult: result.textResult,
@@ -474,7 +473,7 @@ const fetchCaseDetail = async () => {
     clinicalImageUploaders.value = []
 
     // Populate paraclinical results
-    paraclinicalResults.value = caseData.value.paraclinicalResult.map(result => ({
+    paraclinicalResults.value = caseData.value.paraclinicalResult?.map(result => ({
       id: result.id,
       paraClinicalCateId: result.paraclinicalCateId,
       textResult: result.textResult,

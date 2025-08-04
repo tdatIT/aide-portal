@@ -44,7 +44,10 @@ function handleApiError(error: AxiosError<any>) {
         window.location.href = '/login'
         break
       case 403:
-        message.error('Bạn không có quyền thực hiện hành động này')
+        message.error('Bạn không có quyền thực hiện hành động này. Đang chuyển hướng...')
+        setTimeout(() => {
+          window.location.href = '/403'
+        }, 1500)
         break
       case 404:
         message.error('Không tìm thấy tài nguyên yêu cầu')
