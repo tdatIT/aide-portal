@@ -330,3 +330,22 @@ export interface PatientDetail {
   createdBy: string
   updatedBy: string
 }
+
+export interface ExamSessionListItem {
+  sessId: string
+  patientId: number
+  userId: string
+  username: string
+  startedAt: string
+  expiresAt: string
+  finishedAt: string | null
+  commScore: number
+  clinicalSelectScore: number
+  diffDiagScore: number
+  finalDiagScore: number
+  treatmentScore: number
+  aiFeedback: string | null
+  selectionFeedback: string | null
+  createdAt: string
+  updatedAt: string
+}

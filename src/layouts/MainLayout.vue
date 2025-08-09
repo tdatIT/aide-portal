@@ -171,15 +171,15 @@ const menuItems = computed((): MenuItem[] => [
     ]
   },
   {
-    key: 'test',
+    key: 'exam',
     icon: h(ExperimentOutlined),
-    label: t('menu.testManagement'),
+    label: t('menu.examManagement'),
     children: [
       {
-        key: 'test-executions',
+        key: 'exam-executions',
         icon: h(ExperimentOutlined),
-        label: t('menu.testExecutions'),
-        path: '/test/executions'
+        label: t('menu.examExecutions'),
+        path: '/exam/executions'
       }
     ]
   },

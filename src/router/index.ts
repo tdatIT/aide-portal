@@ -59,16 +59,16 @@ const routes: RouteRecordRaw[] = [
           }
         ]
       },
-      // Test Management routes
+      // Exam Management routes
       {
-        path: 'test',
-        name: 'TestManagement',
+        path: 'exam',
+        name: 'ExamManagement',
         meta: { requiresAdmin: true },
         children: [
           {
             path: 'executions',
-            name: 'TestExecutions',
-            component: () => import('@/views/test/TestExecutionsView.vue'),
+            name: 'ExamExecutions',
+            component: () => import('@/views/exam/ExamExecutionsView.vue'),
             meta: { title: 'Quản lý kiểm tra thực hiện', requiresAdmin: true }
           }
         ]

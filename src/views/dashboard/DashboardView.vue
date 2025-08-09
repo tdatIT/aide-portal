@@ -19,15 +19,15 @@
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loadingStats.activeUsers">
-          <a-statistic :title="$t('dashboard.activeUsers')" :value="stats.activeUsers" :prefix="h(UserOutlined)"
+        <a-card class="stat-card" :loading="loadingStats.onlineUsers">
+          <a-statistic :title="$t('dashboard.onlineUsers')" :value="stats.onlineUsers" :prefix="h(UserOutlined)"
             :value-style="{ color: '#52c41a' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loadingStats.monthlyTests">
-          <a-statistic :title="$t('dashboard.monthlyTests')" :value="stats.monthlyTests" :prefix="h(ExperimentOutlined)"
+        <a-card class="stat-card" :loading="loadingStats.totalCurrentTest">
+          <a-statistic :title="$t('dashboard.totalCurrentTest')" :value="stats.totalCurrentTest" :prefix="h(ExperimentOutlined)"
             :value-style="{ color: '#722ed1' }" />
         </a-card>
       </a-col>
@@ -124,9 +124,9 @@ interface Notification {
 // Reactive data
 const stats = ref({
   totalUsers: 0,
-  activeUsers: 0,
-  monthlyTests: 0,
-  newUsers: 0
+  newUsers: 0,
+  onlineUsers: 0,
+  totalCurrentTest: 0,
 })
 
 const recentActivities = ref<Activity[]>([])
@@ -135,9 +135,9 @@ const notifications = ref<Notification[]>([])
 // Loading states
 const loadingStats = ref({
   totalUsers: false,
-  activeUsers: false,
-  monthlyTests: false,
-  newUsers: false
+  newUsers: false,
+  onlineUsers: false,
+  totalCurrentTest: false,
 })
 
 const loadingCharts = ref({
@@ -150,15 +150,6 @@ const loadingNotifications = ref(false)
 
 const currentTime = ref('')
 let timer: any = null
-
-// Computed properties
-const isAnyStatsLoading = computed(() => 
-  Object.values(loadingStats.value).some(loading => loading)
-)
-
-const isAnyChartLoading = computed(() => 
-  Object.values(loadingCharts.value).some(loading => loading)
-)
 
 const updateTime = () => {
   const now = new Date()
@@ -176,47 +167,46 @@ const updateTime = () => {
 const fetchTotalUsers = async () => {
   try {
     loadingStats.value.totalUsers = true
-    const response = await APIClient.getTotalUserCount()
-    stats.value.totalUsers = response.data.data.total
+    const response = await APIClient.countAllUser()
+    stats.value.totalUsers = response.data.data.count
   } catch (error) {
-    console.error('Error fetching total users:', error)
     message.error('Lỗi tải số lượng người dùng')
   } finally {
     loadingStats.value.totalUsers = false
   }
 }
 
-const fetchActiveUsers = async () => {
+const fetchOnlineUsers = async () => {
   try {
-    loadingStats.value.activeUsers = true
-    const response = await APIClient.getConcurrentUserCount()
-    console.log(response.data.data)
-    stats.value.activeUsers = response.data.data.count
+    loadingStats.value.onlineUsers = true
+    const response = await APIClient.countOnlineUser()
+    stats.value.onlineUsers = response.data.data.count
   } catch (error) {
     console.error('Error fetching active users:', error)
     message.error('Lỗi tải số lượng người đang hoạt động')
   } finally {
-    loadingStats.value.activeUsers = false
+    loadingStats.value.onlineUsers = false
   }
 }
 
-const fetchMonthlyTests = async () => {
+const fetchTotalCurrentTest = async () => {
   try {
-    loadingStats.value.monthlyTests = true
-    stats.value.monthlyTests = 0
+    loadingStats.value.totalCurrentTest = true
+    const response = await APIClient.countCurrentTest()
+    stats.value.totalCurrentTest = response.data.data.total
   } catch (error) {
-    console.error('Error fetching monthly tests:', error)
+    console.error('Error fetching total current test:', error)
     message.error('Lỗi tải số lượng bài kiểm tra')
   } finally {
-    loadingStats.value.monthlyTests = false
+    loadingStats.value.totalCurrentTest = false
   }
 }
 
 const fetchNewUsers = async () => {
   try {
     loadingStats.value.newUsers = true
-    const response = await APIClient.getTotalNewUserCount()
-    stats.value.newUsers = response.data.data.total
+    const response = await APIClient.countNewUser()
+    stats.value.newUsers = response.data.data.count
   } catch (error) {
     console.error('Error fetching new users:', error)
     message.error('Lỗi tải số lượng người dùng mới')
@@ -267,13 +257,13 @@ const fetchDashboardData = async (retryCount = 0) => {
     // Fetch all data in parallel for better performance
     const results = await Promise.allSettled([
       fetchTotalUsers(),
-      fetchActiveUsers(),
-      fetchMonthlyTests(),
+      fetchOnlineUsers(),
+      fetchTotalCurrentTest(),
       fetchNewUsers(),
       fetchRecentActivities(),
       fetchNotifications(),
     ])
-    
+
     // Check for any failed requests
     const failedRequests = results.filter(result => result.status === 'rejected')
     if (failedRequests.length > 0) {
@@ -281,7 +271,7 @@ const fetchDashboardData = async (retryCount = 0) => {
     }
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
-    
+
     // Retry mechanism (max 3 retries)
     if (retryCount < 3) {
       message.warning(`Đang thử lại lần ${retryCount + 1}...`)
@@ -327,7 +317,7 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .header-content .ant-btn {
     align-self: flex-end;
   }
