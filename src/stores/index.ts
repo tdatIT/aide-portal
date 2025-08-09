@@ -1,5 +1,6 @@
 import type { Language, ThemeMode, UserWithRoles } from '@/types'
 import { defineStore } from 'pinia'
+import heartbeatService from '@/utils/heartbeat'
 
 // Auth Store
 export const useAuthStore = defineStore('auth', {
@@ -39,8 +40,11 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('accessToken', authData.accessToken)
       localStorage.setItem('refreshToken', authData.refreshToken)
       this.setUser(authData.user)
+
+      // Bắt đầu heartbeat service khi user đăng nhập
+      heartbeatService.start()
     },
-    
+
     logout() {
       this.user = null
       this.accessToken = null
@@ -48,6 +52,9 @@ export const useAuthStore = defineStore('auth', {
       this.isAuthenticated = false
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+
+      // Dừng heartbeat service khi user đăng xuất
+      heartbeatService.stop()
     }
   }
 })

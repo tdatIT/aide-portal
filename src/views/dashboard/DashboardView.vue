@@ -197,11 +197,11 @@ const fetchTotalUsers = async () => {
 const fetchActiveUsers = async () => {
   try {
     loadingStats.value.activeUsers = true
-
-    stats.value.activeUsers = Math.floor(stats.value.totalUsers * 0.8)
+    const response = await APIClient.getConcurrentUserCount()
+    stats.value.activeUsers = response.data.data.total
   } catch (error) {
     console.error('Error fetching active users:', error)
-    message.error('Lỗi tải số lượng người dùng hoạt động')
+    message.error('Lỗi tải số lượng người đang hoạt động')
   } finally {
     loadingStats.value.activeUsers = false
   }
@@ -210,8 +210,7 @@ const fetchActiveUsers = async () => {
 const fetchMonthlyTests = async () => {
   try {
     loadingStats.value.monthlyTests = true
-    const response = await APIClient.getTotalTestCount()
-    stats.value.monthlyTests = response.data.total
+    stats.value.monthlyTests = 0
   } catch (error) {
     console.error('Error fetching monthly tests:', error)
     message.error('Lỗi tải số lượng bài kiểm tra')
