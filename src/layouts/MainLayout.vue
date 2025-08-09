@@ -94,9 +94,6 @@
         </div>
       </a-layout-content>
     </a-layout>
-    
-    <!-- Heartbeat Status (Debug) -->
-    <HeartbeatStatus :show-debug="isDevelopment" />
   </a-layout>
 </template>
 
@@ -107,7 +104,6 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore } from '@/stores'
 import type { MenuItem } from '@/types'
 import { APIClient } from '@/api'
-import HeartbeatStatus from '@/components/HeartbeatStatus.vue'
 
 interface BreadcrumbItem {
   title: string
@@ -146,7 +142,6 @@ const collapsed = computed(() => appStore.collapsed)
 const isDark = computed(() => appStore.theme === 'dark')
 const currentLanguage = computed(() => appStore.language)
 const currentUser = computed(() => authStore.currentUser)
-const isDevelopment = computed(() => import.meta.env.DEV)
 
 // Menu items
 const menuItems = computed((): MenuItem[] => [

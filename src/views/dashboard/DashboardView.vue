@@ -6,14 +6,6 @@
           <h1>{{ $t('dashboard.title') }}</h1>
           <p class="current-time">Thời gian hiện tại: {{ currentTime }}</p>
         </div>
-        <a-button 
-          type="primary" 
-          :loading="isAnyStatsLoading || isAnyChartLoading || loadingActivities || loadingNotifications"
-          @click="refreshDashboard"
-          icon="🔄"
-        >
-          Làm mới
-        </a-button>
       </div>
     </div>
 
@@ -198,7 +190,8 @@ const fetchActiveUsers = async () => {
   try {
     loadingStats.value.activeUsers = true
     const response = await APIClient.getConcurrentUserCount()
-    stats.value.activeUsers = response.data.data.total
+    console.log(response.data.data)
+    stats.value.activeUsers = response.data.data.count
   } catch (error) {
     console.error('Error fetching active users:', error)
     message.error('Lỗi tải số lượng người đang hoạt động')
@@ -299,19 +292,6 @@ const fetchDashboardData = async (retryCount = 0) => {
   }
 }
 
-// Refresh function
-const refreshDashboard = async () => {
-  const hide = message.loading('Đang làm mới dữ liệu...', 0)
-  try {
-    await fetchDashboardData()
-    message.success('Đã làm mới dữ liệu thành công')
-  } catch (error) {
-    message.error('Lỗi khi làm mới dữ liệu')
-  } finally {
-    hide()
-  }
-}
-
 // Lifecycle hooks
 onMounted(() => {
   fetchDashboardData()
@@ -323,11 +303,6 @@ onUnmounted(() => {
   if (timer) {
     clearInterval(timer as NodeJS.Timeout)
   }
-})
-
-// Expose refresh function for potential use
-defineExpose({
-  refreshDashboard
 })
 </script>
 

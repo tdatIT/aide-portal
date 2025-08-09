@@ -30,7 +30,7 @@ const processQueue = (error: any, token: string | null = null) => {
       resolve(token)
     }
   })
-  
+
   failedQueue = []
 }
 
@@ -72,7 +72,7 @@ async function handleApiError(error: AxiosError<any>) {
         // Check if it's a token refresh error (code 108)
         if (data?.code === 108) {
           const originalRequest = error.config
-          
+
           if (isRefreshing) {
             // If already refreshing, add to queue
             return new Promise((resolve, reject) => {
@@ -110,18 +110,18 @@ async function handleApiError(error: AxiosError<any>) {
 
             // Process queue and retry original request
             processQueue(null, authData.accessToken)
-            
+
             if (originalRequest) {
               return retryRequest(originalRequest, authData.accessToken)
             }
           } catch (refreshError: any) {
             console.error('Token refresh failed:', refreshError)
             message.error('Phiên đăng nhập đã hết hạn')
-            
+
             // Clear auth data and redirect to login
             const authStore = useAuthStore()
             authStore.logout()
-            
+
             processQueue(refreshError, null)
             window.location.href = '/login'
             return
@@ -191,18 +191,18 @@ export const APIClient = {
   getDashboardStats: () => axiosClient.get(`${PATIENT_API_URL}/dashboard/stats`),
 
   // Users
-  getUsers: (params?: any): Promise<AxiosResponse<ApiResponse<PaginatedResponse<User>>>> => 
+  getUsers: (params?: any): Promise<AxiosResponse<ApiResponse<PaginatedResponse<User>>>> =>
     axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users`, { params }),
-  getUser: (id: string): Promise<AxiosResponse<ApiResponse<UserWithRoles>>> => 
+  getUser: (id: string): Promise<AxiosResponse<ApiResponse<UserWithRoles>>> =>
     axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users/${id}`),
-  updateUserStatus: (id: string, isActive: boolean) => 
+  updateUserStatus: (id: string, isActive: boolean) =>
     axiosClient.patch(`${AUTH_API_URL}/api/v1/iam/users/${id}/status`, { isActive }),
   updateUserPermissions: (id: string, data: any) => axiosClient.put(`/users/${id}/permissions`, data),
 
   // Roles
-  getRoles: (): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Role>>>> => 
+  getRoles: (): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Role>>>> =>
     axiosClient.get(`${AUTH_API_URL}/api/v1/iam/roles`),
-  updateRoleMapping: (userId: string, roleIds: number[]) => 
+  updateRoleMapping: (userId: string, roleIds: number[]) =>
     axiosClient.patch(`${AUTH_API_URL}/api/v1/iam/role-mapping`, { userId, roleIds }),
 
   // Medical Categories
@@ -239,7 +239,7 @@ export const APIClient = {
 
   // Patient cases
   getPatients: (params?: any) => axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients`, { params }),
-  getPatient: (id: string): Promise<AxiosResponse<ApiResponse<PatientDetail>>> => 
+  getPatient: (id: string): Promise<AxiosResponse<ApiResponse<PatientDetail>>> =>
     axiosClient.get(`${PATIENT_API_URL}/api/v1/admin/patients/${id}`),
   createExamination: (patientId: number, data: ExaminationRequest) =>
     axiosClient.post(`${PATIENT_API_URL}/api/v1/admin/patients/${patientId}/examination`, data),
@@ -290,11 +290,11 @@ export const APIClient = {
     axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/images/${id}`),
 
   //Statistics
-  getTotalUserCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+  getTotalUserCount: (): Promise<AxiosResponse<ApiResponse<{ total: number }>>> =>
     axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/user`),
-  getTotalNewUserCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+  getTotalNewUserCount: (): Promise<AxiosResponse<ApiResponse<{ total: number }>>> =>
     axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/new-user`),
-  getConcurrentUserCount:():Promise<AxiosResponse<ApiResponse<{total: number}>>> =>
+  getConcurrentUserCount: (): Promise<AxiosResponse<ApiResponse>> =>
     axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/active-user`),
 }
 

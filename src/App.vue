@@ -5,7 +5,6 @@ import { useAppStore } from '@/stores'
 const appStore = useAppStore()
 
 onMounted(() => {
-  // Initialize theme
   document.documentElement.setAttribute('data-theme', appStore.theme)
 })
 </script>
