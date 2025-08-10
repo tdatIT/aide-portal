@@ -140,17 +140,16 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn, ExamSessionListItem } from '@/types'
 import { APIClient } from '@/api'
+import type { ExamSessionListItem, TableColumn } from '@/types'
 import {
-    EyeOutlined,
-    ReloadOutlined,
     DownloadOutlined,
+    EyeOutlined,
     FilterOutlined
 } from '@ant-design/icons-vue'
-import { onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import dayjs, { type Dayjs } from 'dayjs'
+import { onMounted, reactive, ref } from 'vue'
 import * as XLSX from 'xlsx'
 
 // Reactive data
