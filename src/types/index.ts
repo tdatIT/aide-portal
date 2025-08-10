@@ -349,3 +349,11 @@ export interface ExamSessionListItem {
   createdAt: string
   updatedAt: string
 }
+
+export interface ExamSessionStats {
+  date: string
+  totalCount: number
+  completedCount: number
+  processingCount: number
+  expiredCount: number
+}

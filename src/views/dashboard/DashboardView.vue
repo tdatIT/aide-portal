@@ -51,9 +51,14 @@
       </a-col>
 
       <a-col :xs="24" :lg="12">
-        <a-card title="Thống kê bài kiểm tra" class="chart-card" :loading="loadingCharts.testStats">
-          <div class="chart-placeholder">
-            <a-empty description="Biểu đồ sẽ được hiển thị ở đây" />
+        <a-card title="Thống kê bài kiểm tra (7 ngày gần đây)" class="chart-card" :loading="loadingCharts.testStats">
+          <ExamStatsChart 
+            v-if="!loadingCharts.testStats && examStatsData.length > 0" 
+            :data="examStatsData" 
+            :loading="loadingCharts.testStats" 
+          />
+          <div v-else-if="!loadingCharts.testStats && examStatsData.length === 0" class="chart-placeholder">
+            <a-empty description="Không có dữ liệu thống kê" />
           </div>
         </a-card>
       </a-col>
@@ -104,9 +109,11 @@ import {
   TeamOutlined,
   UserOutlined
 } from '@ant-design/icons-vue'
-import { h, onMounted, onUnmounted, ref, computed } from 'vue'
+import { h, onMounted, onUnmounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { APIClient } from '@/api'
+import type { ExamSessionStats } from '@/types'
+import ExamStatsChart from '@/components/ui/ExamStatsChart.vue'
 
 // Types
 interface Activity {
@@ -131,6 +138,7 @@ const stats = ref({
 
 const recentActivities = ref<Activity[]>([])
 const notifications = ref<Notification[]>([])
+const examStatsData = ref<ExamSessionStats[]>([])
 
 // Loading states
 const loadingStats = ref({
@@ -251,6 +259,28 @@ const fetchNotifications = async () => {
   }
 }
 
+const fetchExamStats = async () => {
+  try {
+    loadingCharts.value.testStats = true
+    
+    // Calculate date range for last 7 days
+    const toDate = new Date()
+    const fromDate = new Date()
+    fromDate.setDate(toDate.getDate() - 7)
+    
+    const fromDateStr = fromDate.toISOString().split('T')[0]
+    const toDateStr = toDate.toISOString().split('T')[0]
+    
+    const response = await APIClient.getExamSessionStatsByStatus(fromDateStr, toDateStr)
+    examStatsData.value = response.data.data.items
+  } catch (error) {
+    console.error('Error fetching exam stats:', error)
+    message.error('Lỗi tải thống kê bài kiểm tra')
+  } finally {
+    loadingCharts.value.testStats = false
+  }
+}
+
 // Main fetch function with retry mechanism
 const fetchDashboardData = async (retryCount = 0) => {
   try {
@@ -262,6 +292,7 @@ const fetchDashboardData = async (retryCount = 0) => {
       fetchNewUsers(),
       fetchRecentActivities(),
       fetchNotifications(),
+      fetchExamStats(),
     ])
 
     // Check for any failed requests

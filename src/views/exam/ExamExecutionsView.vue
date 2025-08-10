@@ -16,17 +16,17 @@
                 </a-space>
 
                 <a-space>
-                    <a-select v-model:value="statusFilter" placeholder="Lọc theo trạng thái" style="width: 150px"
-                        allow-clear @change="handleStatusFilter">
-                        <a-select-option value="in_progress">Đang thực hiện</a-select-option>
-                        <a-select-option value="expired">Hết hạn</a-select-option>
-                    </a-select>
-
+                    <a-button @click="handleExportExcel" :loading="loading" type="primary">
+                        <template #icon>
+                            <DownloadOutlined />
+                        </template>
+                        Xuất Excel
+                    </a-button>
                     <a-button @click="handleRefresh" :loading="loading">
                         <template #icon>
-                            <ReloadOutlined />
+                            <FilterOutlined />
                         </template>
-                        Làm mới
+                       Lọc
                     </a-button>
                 </a-space>
             </div>
@@ -36,9 +36,6 @@
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'user'">
                         <div class="user-info">
-                            <a-avatar size="small">
-                                {{ record.username?.charAt(0)?.toUpperCase() || 'U' }}
-                            </a-avatar>
                             <span style="margin-left: 8px">{{ record.username || 'N/A' }}</span>
                         </div>
                     </template>
@@ -74,15 +71,10 @@
                         <a-tag color="blue">{{ selectedRecord.sessId }}</a-tag>
                     </a-descriptions-item>
                     <a-descriptions-item label="PatientID">
-                        <a-tag color="green">{{ selectedRecord.patientId }}</a-tag>
+                       {{ selectedRecord.patientId }}
                     </a-descriptions-item>
                     <a-descriptions-item label="Username">
-                        <div class="user-info">
-                            <a-avatar size="small">
-                                {{ selectedRecord.username?.charAt(0)?.toUpperCase() || 'U' }}
-                            </a-avatar>
-                            <span style="margin-left: 8px">{{ selectedRecord.username || 'N/A' }}</span>
-                        </div>
+                        {{ selectedRecord.username || 'N/A' }}
                     </a-descriptions-item>
                     <a-descriptions-item label="Trạng thái">
                         <a-tag :color="getStatusColor(getStatus(selectedRecord))">
@@ -104,57 +96,28 @@
                 </a-descriptions>
 
                 <a-divider>Điểm số chi tiết</a-divider>
+                <a-descriptions :column="2" bordered>
+                    <a-descriptions-item label="Giao tiếp">
+                        {{ selectedRecord.commScore }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="Lâm sàng/cận lâm sàng">
+                        {{ selectedRecord.clinicalSelectScore }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="Chẩn đoán phân biệt">
+                        {{ selectedRecord.diffDiagScore }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="Chẩn đoán cuối">
+                        {{ selectedRecord.finalDiagScore }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="Điều trị">
+                        {{ selectedRecord.treatmentScore }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="Tổng đi">
+                        {{ calculateOverallScore(selectedRecord) }}
+                    </a-descriptions-item>
 
-                <a-row :gutter="16">
-                    <a-col :span="12">
-                        <a-card size="small" title="Điểm giao tiếp">
-                            <a-progress
-                                v-if="selectedRecord.commScore !== null && selectedRecord.commScore !== undefined"
-                                :percent="selectedRecord.commScore"
-                                :status="getScoreStatus(selectedRecord.commScore)" />
-                            <span v-else class="text-muted">Chưa có điểm</span>
-                        </a-card>
-                    </a-col>
-                    <a-col :span="12">
-                        <a-card size="small" title="Điểm lựa chọn lâm sàng">
-                            <a-progress
-                                v-if="selectedRecord.clinicalSelectScore !== null && selectedRecord.clinicalSelectScore !== undefined"
-                                :percent="selectedRecord.clinicalSelectScore"
-                                :status="getScoreStatus(selectedRecord.clinicalSelectScore)" />
-                            <span v-else class="text-muted">Chưa có điểm</span>
-                        </a-card>
-                    </a-col>
-                    <a-col :span="12" style="margin-top: 16px;">
-                        <a-card size="small" title="Điểm chẩn đoán phân biệt">
-                            <a-progress
-                                v-if="selectedRecord.diffDiagScore !== null && selectedRecord.diffDiagScore !== undefined"
-                                :percent="selectedRecord.diffDiagScore"
-                                :status="getScoreStatus(selectedRecord.diffDiagScore)" />
-                            <span v-else class="text-muted">Chưa có điểm</span>
-                        </a-card>
-                    </a-col>
-                    <a-col :span="12" style="margin-top: 16px;">
-                        <a-card size="small" title="Điểm chẩn đoán cuối cùng">
-                            <a-progress
-                                v-if="selectedRecord.finalDiagScore !== null && selectedRecord.finalDiagScore !== undefined"
-                                :percent="selectedRecord.finalDiagScore"
-                                :status="getScoreStatus(selectedRecord.finalDiagScore)" />
-                            <span v-else class="text-muted">Chưa có điểm</span>
-                        </a-card>
-                    </a-col>
-                </a-row>
+                </a-descriptions>
 
-                <a-row :gutter="16" style="margin-top: 16px;">
-                    <a-col :span="24">
-                        <a-card size="small" title="Điểm điều trị">
-                            <a-progress
-                                v-if="selectedRecord.treatmentScore !== null && selectedRecord.treatmentScore !== undefined"
-                                :percent="selectedRecord.treatmentScore"
-                                :status="getScoreStatus(selectedRecord.treatmentScore)" />
-                            <span v-else class="text-muted">Chưa có điểm</span>
-                        </a-card>
-                    </a-col>
-                </a-row>
 
                 <!-- AI Feedback if available -->
                 <template v-if="selectedRecord.aiFeedback">
@@ -181,11 +144,14 @@ import type { TableColumn, ExamSessionListItem } from '@/types'
 import { APIClient } from '@/api'
 import {
     EyeOutlined,
-    ReloadOutlined
+    ReloadOutlined,
+    DownloadOutlined,
+    FilterOutlined
 } from '@ant-design/icons-vue'
 import { onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import dayjs, { type Dayjs } from 'dayjs'
+import * as XLSX from 'xlsx'
 
 // Reactive data
 const dataSource = ref<ExamSessionListItem[]>([])
@@ -313,19 +279,8 @@ const getStatusText = (status: string) => {
     return texts[status as keyof typeof texts] || status
 }
 
-const getScoreStatus = (score: number) => {
-    if (score >= 80) return 'success'
-    if (score >= 60) return 'normal'
-    return 'exception'
-}
-
 const formatDateTime = (dateString: string) => {
     return dayjs(dateString).format('DD/MM/YYYY HH:mm:ss')
-}
-
-const handleStatusFilter = () => {
-    pagination.current = 1
-    fetchData()
 }
 
 const handleDateFilter = () => {
@@ -338,7 +293,7 @@ const calculateOverallScore = (record: ExamSessionListItem) => {
         record.diffDiagScore * 0.25 + record.finalDiagScore * 0.125 + record.treatmentScore * 0.125;
 }
 
-const handleTableChange = (paginationData: any, filters: any, sorter: any) => {
+const handleTableChange = (paginationData: any, filters: any) => {
     pagination.current = paginationData.current
     pagination.pageSize = paginationData.pageSize
 
@@ -354,6 +309,88 @@ const handleTableChange = (paginationData: any, filters: any, sorter: any) => {
 
 const handleRefresh = () => {
     fetchData()
+}
+
+const handleExportExcel = () => {
+    // Kiểm tra giới hạn 100 dòng
+    if (dataSource.value.length > 100) {
+        message.warning('Không thể xuất quá 100 dòng dữ liệu. Vui lòng lọc dữ liệu để giảm số lượng bản ghi.')
+        return
+    }
+
+    if (dataSource.value.length === 0) {
+        message.warning('Không có dữ liệu để xuất')
+        return
+    }
+
+    try {
+        // Chuẩn bị dữ liệu cho Excel - sử dụng array format
+        const headers = [
+            'STT', 'Session ID', 'Patient ID', 'Email', 'Thời gian bắt đầu', 
+            'Thời gian hết hạn', 'Thời gian hoàn thành', 'Trạng thái', 
+            'Điểm giao tiếp', 'Điểm lâm sàng/cận lâm sàng', 'Điểm chẩn đoán phân biệt', 
+            'Điểm chẩn đoán cuối', 'Điểm điều trị', 'Điểm tổng', 'Thời gian tạo'
+        ]
+
+        const rows = dataSource.value.map((record, index) => [
+            index + 1,
+            record.sessId,
+            record.patientId,
+            record.username || 'N/A',
+            formatDateTime(record.startedAt),
+            formatDateTime(record.expiresAt),
+            record.finishedAt ? formatDateTime(record.finishedAt) : 'Chưa hoàn thành',
+            getStatusText(getStatus(record)),
+            record.commScore,
+            record.clinicalSelectScore,
+            record.diffDiagScore,
+            record.finalDiagScore,
+            record.treatmentScore,
+            calculateOverallScore(record).toFixed(2),
+            formatDateTime(record.createdAt)
+        ])
+
+        const data = [headers, ...rows]
+
+        // Tạo worksheet từ array
+        const worksheet = XLSX.utils.aoa_to_sheet(data)
+
+        // Thiết lập độ rộng cột
+        const colWidths = [
+            { wch: 5 },   // STT
+            { wch: 15 },  // Session ID
+            { wch: 12 },  // Patient ID
+            { wch: 25 },  // Email
+            { wch: 18 },  // Thời gian bắt đầu
+            { wch: 18 },  // Thời gian hết hạn
+            { wch: 18 },  // Thời gian hoàn thành
+            { wch: 15 },  // Trạng thái
+            { wch: 15 },  // Điểm giao tiếp
+            { wch: 20 },  // Điểm lâm sàng/cận lâm sàng
+            { wch: 20 },  // Điểm chẩn đoán phân biệt
+            { wch: 18 },  // Điểm chẩn đoán cuối
+            { wch: 15 },  // Điểm điều trị
+            { wch: 12 },  // Điểm tổng
+            { wch: 18 }   // Thời gian tạo
+        ]
+        worksheet['!cols'] = colWidths
+
+        // Tạo workbook và thêm worksheet
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Exam Executions')
+
+        // Tạo tên file với thời gian hiện tại
+        const now = dayjs()
+        const filename = `exam-executions-${now.format('YYYY-MM-DD-HH-mm-ss')}.xlsx`
+
+        // Xuất file
+        XLSX.writeFile(workbook, filename)
+        
+        message.success(`Đã xuất thành công ${dataSource.value.length} bản ghi ra file ${filename}`)
+    } catch (error) {
+        console.error('Error exporting Excel:', error)
+        message.error('Có lỗi xảy ra khi xuất file Excel')
+    }
 }
 
 const viewDetail = (record: ExamSessionListItem) => {

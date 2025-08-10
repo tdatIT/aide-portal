@@ -1,4 +1,4 @@
-import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse, ImageUploadResponse, PatientDetail, User, UserWithRoles, PaginatedResponse, Role, ExamSessionListItem } from '@/types'
+import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse, ImageUploadResponse, PatientDetail, User, UserWithRoles, PaginatedResponse, Role, ExamSessionListItem, ExamSessionStats } from '@/types'
 import { message } from 'ant-design-vue'
 import type { AxiosError, AxiosResponse } from 'axios'
 import axios from 'axios'
@@ -292,7 +292,7 @@ export const APIClient = {
   // get all exam
   getAllExam: (page: number, size: number, from_date?: string, to_date?: string):
     Promise<AxiosResponse<ApiResponse<PaginatedResponse<ExamSessionListItem>>>> =>
-    axiosClient.get(`${EXAM_API_URL}/api/v1/stats/exam-session`, { params: { page, size, from_date, to_date } }),
+    axiosClient.get(`${EXAM_API_URL}/api/v1/admin/exam-session`, { params: { page, size, from_date, to_date } }),
 
   //Statistics
   countAllUser: (): Promise<AxiosResponse<ApiResponse<{ count: number }>>> =>
@@ -302,7 +302,9 @@ export const APIClient = {
   countOnlineUser: (): Promise<AxiosResponse<ApiResponse<{ count: number }>>> =>
     axiosClient.get(`${USER_API_URL}/api/v1/stats/online-user`),
   countCurrentTest: (): Promise<AxiosResponse<ApiResponse<{ total: number }>>> =>
-    axiosClient.get(`${EXAM_API_URL}/api/v1/stats/exam-session/process/count`),
+    axiosClient.get(`${EXAM_API_URL}/api/v1/stats/exam-session/count-all-processing`),
+  getExamSessionStatsByStatus: (from_date?: string, to_date?: string): Promise<AxiosResponse<ApiResponse<{ items: ExamSessionStats[] }>>> =>
+    axiosClient.get(`${EXAM_API_URL}/api/v1/stats/exam-session/count-by-status`, { params: { from_date, to_date } }),
 }
 
 export default axiosClient 
