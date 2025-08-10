@@ -1,12 +1,13 @@
-import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse, ImageUploadResponse, PatientDetail, User, UserWithRoles, PaginatedResponse, Role } from '@/types'
+import type { AuthResponse, GoogleAuthRequest, ApiResponse, CreatePatientRequest, ExaminationRequest, CreatePatientResponse, ImageUploadResponse, PatientDetail, User, UserWithRoles, PaginatedResponse, Role, ExamSessionListItem, ExamSessionStats } from '@/types'
 import { message } from 'ant-design-vue'
 import type { AxiosError, AxiosResponse } from 'axios'
 import axios from 'axios'
 import { useAuthStore } from '@/stores'
 
 // API Base URLs
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL
+const USER_API_URL = import.meta.env.VITE_USER_API_URL
 const PATIENT_API_URL = import.meta.env.VITE_PATIENT_API_URL
+const EXAM_API_URL = import.meta.env.VITE_EXAM_API_URL
 
 const axiosClient = axios.create({
   timeout: 10000,
@@ -15,7 +16,6 @@ const axiosClient = axios.create({
   }
 })
 
-// Flag to prevent multiple refresh token calls
 let isRefreshing = false
 let failedQueue: Array<{
   resolve: (value?: string | null) => void
@@ -176,34 +176,34 @@ axiosClient.interceptors.response.use(
 // API methods
 export const APIClient = {
   login: (credentials: any): Promise<AxiosResponse<AuthResponse>> =>
-    axios.post(`${AUTH_API_URL}/api/v1/auth/login`, credentials),
+    axios.post(`${USER_API_URL}/api/v1/auth/login`, credentials),
   loginWithGoogle: (request: GoogleAuthRequest): Promise<AxiosResponse<AuthResponse>> =>
-    axios.post(`${AUTH_API_URL}/api/v1/auth/oauth2/google`, request),
+    axios.post(`${USER_API_URL}/api/v1/auth/oauth2/google`, request),
   refreshToken: (refreshToken: string): Promise<AxiosResponse<AuthResponse>> =>
-    axios.post(`${AUTH_API_URL}/api/v1/auth/token/refresh`, { token: refreshToken }),
-  logout: () => axiosClient.get(`${AUTH_API_URL}/api/v1/auth/logout`),
+    axios.post(`${USER_API_URL}/api/v1/auth/token/refresh`, { token: refreshToken }),
+  logout: () => axiosClient.get(`${USER_API_URL}/api/v1/auth/logout`),
 
 
   // tracking
   heartbeat: (): Promise<AxiosResponse<ApiResponse>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/tracking/heartbeat`),
+    axiosClient.get(`${USER_API_URL}/api/v1/tracking/heartbeat`),
   // Legacy APIs - using old format
   getDashboardStats: () => axiosClient.get(`${PATIENT_API_URL}/dashboard/stats`),
 
   // Users
   getUsers: (params?: any): Promise<AxiosResponse<ApiResponse<PaginatedResponse<User>>>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users`, { params }),
+    axiosClient.get(`${USER_API_URL}/api/v1/iam/users`, { params }),
   getUser: (id: string): Promise<AxiosResponse<ApiResponse<UserWithRoles>>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/iam/users/${id}`),
+    axiosClient.get(`${USER_API_URL}/api/v1/iam/users/${id}`),
   updateUserStatus: (id: string, isActive: boolean) =>
-    axiosClient.patch(`${AUTH_API_URL}/api/v1/iam/users/${id}/status`, { isActive }),
+    axiosClient.patch(`${USER_API_URL}/api/v1/iam/users/${id}/status`, { isActive }),
   updateUserPermissions: (id: string, data: any) => axiosClient.put(`/users/${id}/permissions`, data),
 
   // Roles
   getRoles: (): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Role>>>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/iam/roles`),
+    axiosClient.get(`${USER_API_URL}/api/v1/iam/roles`),
   updateRoleMapping: (userId: string, roleIds: number[]) =>
-    axiosClient.patch(`${AUTH_API_URL}/api/v1/iam/role-mapping`, { userId, roleIds }),
+    axiosClient.patch(`${USER_API_URL}/api/v1/iam/role-mapping`, { userId, roleIds }),
 
   // Medical Categories
   getClinicalCategories: (params?: any) =>
@@ -289,13 +289,22 @@ export const APIClient = {
   deleteImage: (id: string) =>
     axiosClient.delete(`${PATIENT_API_URL}/api/v1/admin/images/${id}`),
 
+  // get all exam
+  getAllExam: (page: number, size: number, from_date?: string, to_date?: string):
+    Promise<AxiosResponse<ApiResponse<PaginatedResponse<ExamSessionListItem>>>> =>
+    axiosClient.get(`${EXAM_API_URL}/api/v1/admin/exam-session`, { params: { page, size, from_date, to_date } }),
+
   //Statistics
-  getTotalUserCount: (): Promise<AxiosResponse<ApiResponse<{ total: number }>>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/user`),
-  getTotalNewUserCount: (): Promise<AxiosResponse<ApiResponse<{ total: number }>>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/new-user`),
-  getConcurrentUserCount: (): Promise<AxiosResponse<ApiResponse>> =>
-    axiosClient.get(`${AUTH_API_URL}/api/v1/stats/total/active-user`),
+  countAllUser: (): Promise<AxiosResponse<ApiResponse<{ count: number }>>> =>
+    axiosClient.get(`${USER_API_URL}/api/v1/stats/all-user`),
+  countNewUser: (): Promise<AxiosResponse<ApiResponse<{ count: number }>>> =>
+    axiosClient.get(`${USER_API_URL}/api/v1/stats/new-user`),
+  countOnlineUser: (): Promise<AxiosResponse<ApiResponse<{ count: number }>>> =>
+    axiosClient.get(`${USER_API_URL}/api/v1/stats/online-user`),
+  countCurrentTest: (): Promise<AxiosResponse<ApiResponse<{ total: number }>>> =>
+    axiosClient.get(`${EXAM_API_URL}/api/v1/stats/exam-session/count-all-processing`),
+  getExamSessionStatsByStatus: (from_date?: string, to_date?: string): Promise<AxiosResponse<ApiResponse<{ items: ExamSessionStats[] }>>> =>
+    axiosClient.get(`${EXAM_API_URL}/api/v1/stats/exam-session/count-by-status`, { params: { from_date, to_date } }),
 }
 
 export default axiosClient 

@@ -19,15 +19,15 @@
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loadingStats.activeUsers">
-          <a-statistic :title="$t('dashboard.activeUsers')" :value="stats.activeUsers" :prefix="h(UserOutlined)"
+        <a-card class="stat-card" :loading="loadingStats.onlineUsers">
+          <a-statistic :title="$t('dashboard.onlineUsers')" :value="stats.onlineUsers" :prefix="h(UserOutlined)"
             :value-style="{ color: '#52c41a' }" />
         </a-card>
       </a-col>
 
       <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :loading="loadingStats.monthlyTests">
-          <a-statistic :title="$t('dashboard.monthlyTests')" :value="stats.monthlyTests" :prefix="h(ExperimentOutlined)"
+        <a-card class="stat-card" :loading="loadingStats.totalCurrentTest">
+          <a-statistic :title="$t('dashboard.totalCurrentTest')" :value="stats.totalCurrentTest" :prefix="h(ExperimentOutlined)"
             :value-style="{ color: '#722ed1' }" />
         </a-card>
       </a-col>
@@ -51,9 +51,14 @@
       </a-col>
 
       <a-col :xs="24" :lg="12">
-        <a-card title="Thống kê bài kiểm tra" class="chart-card" :loading="loadingCharts.testStats">
-          <div class="chart-placeholder">
-            <a-empty description="Biểu đồ sẽ được hiển thị ở đây" />
+        <a-card title="Thống kê bài kiểm tra (7 ngày gần đây)" class="chart-card" :loading="loadingCharts.testStats">
+          <ExamStatsChart 
+            v-if="!loadingCharts.testStats && examStatsData.length > 0" 
+            :data="examStatsData" 
+            :loading="loadingCharts.testStats" 
+          />
+          <div v-else-if="!loadingCharts.testStats && examStatsData.length === 0" class="chart-placeholder">
+            <a-empty description="Không có dữ liệu thống kê" />
           </div>
         </a-card>
       </a-col>
@@ -104,9 +109,11 @@ import {
   TeamOutlined,
   UserOutlined
 } from '@ant-design/icons-vue'
-import { h, onMounted, onUnmounted, ref, computed } from 'vue'
+import { h, onMounted, onUnmounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { APIClient } from '@/api'
+import type { ExamSessionStats } from '@/types'
+import ExamStatsChart from '@/components/ui/ExamStatsChart.vue'
 
 // Types
 interface Activity {
@@ -124,20 +131,21 @@ interface Notification {
 // Reactive data
 const stats = ref({
   totalUsers: 0,
-  activeUsers: 0,
-  monthlyTests: 0,
-  newUsers: 0
+  newUsers: 0,
+  onlineUsers: 0,
+  totalCurrentTest: 0,
 })
 
 const recentActivities = ref<Activity[]>([])
 const notifications = ref<Notification[]>([])
+const examStatsData = ref<ExamSessionStats[]>([])
 
 // Loading states
 const loadingStats = ref({
   totalUsers: false,
-  activeUsers: false,
-  monthlyTests: false,
-  newUsers: false
+  newUsers: false,
+  onlineUsers: false,
+  totalCurrentTest: false,
 })
 
 const loadingCharts = ref({
@@ -150,15 +158,6 @@ const loadingNotifications = ref(false)
 
 const currentTime = ref('')
 let timer: any = null
-
-// Computed properties
-const isAnyStatsLoading = computed(() => 
-  Object.values(loadingStats.value).some(loading => loading)
-)
-
-const isAnyChartLoading = computed(() => 
-  Object.values(loadingCharts.value).some(loading => loading)
-)
 
 const updateTime = () => {
   const now = new Date()
@@ -176,47 +175,46 @@ const updateTime = () => {
 const fetchTotalUsers = async () => {
   try {
     loadingStats.value.totalUsers = true
-    const response = await APIClient.getTotalUserCount()
-    stats.value.totalUsers = response.data.data.total
+    const response = await APIClient.countAllUser()
+    stats.value.totalUsers = response.data.data.count
   } catch (error) {
-    console.error('Error fetching total users:', error)
     message.error('Lỗi tải số lượng người dùng')
   } finally {
     loadingStats.value.totalUsers = false
   }
 }
 
-const fetchActiveUsers = async () => {
+const fetchOnlineUsers = async () => {
   try {
-    loadingStats.value.activeUsers = true
-    const response = await APIClient.getConcurrentUserCount()
-    console.log(response.data.data)
-    stats.value.activeUsers = response.data.data.count
+    loadingStats.value.onlineUsers = true
+    const response = await APIClient.countOnlineUser()
+    stats.value.onlineUsers = response.data.data.count
   } catch (error) {
     console.error('Error fetching active users:', error)
     message.error('Lỗi tải số lượng người đang hoạt động')
   } finally {
-    loadingStats.value.activeUsers = false
+    loadingStats.value.onlineUsers = false
   }
 }
 
-const fetchMonthlyTests = async () => {
+const fetchTotalCurrentTest = async () => {
   try {
-    loadingStats.value.monthlyTests = true
-    stats.value.monthlyTests = 0
+    loadingStats.value.totalCurrentTest = true
+    const response = await APIClient.countCurrentTest()
+    stats.value.totalCurrentTest = response.data.data.total
   } catch (error) {
-    console.error('Error fetching monthly tests:', error)
+    console.error('Error fetching total current test:', error)
     message.error('Lỗi tải số lượng bài kiểm tra')
   } finally {
-    loadingStats.value.monthlyTests = false
+    loadingStats.value.totalCurrentTest = false
   }
 }
 
 const fetchNewUsers = async () => {
   try {
     loadingStats.value.newUsers = true
-    const response = await APIClient.getTotalNewUserCount()
-    stats.value.newUsers = response.data.data.total
+    const response = await APIClient.countNewUser()
+    stats.value.newUsers = response.data.data.count
   } catch (error) {
     console.error('Error fetching new users:', error)
     message.error('Lỗi tải số lượng người dùng mới')
@@ -261,19 +259,42 @@ const fetchNotifications = async () => {
   }
 }
 
+const fetchExamStats = async () => {
+  try {
+    loadingCharts.value.testStats = true
+    
+    // Calculate date range for last 7 days
+    const toDate = new Date()
+    const fromDate = new Date()
+    fromDate.setDate(toDate.getDate() - 7)
+    
+    const fromDateStr = fromDate.toISOString().split('T')[0]
+    const toDateStr = toDate.toISOString().split('T')[0]
+    
+    const response = await APIClient.getExamSessionStatsByStatus(fromDateStr, toDateStr)
+    examStatsData.value = response.data.data.items
+  } catch (error) {
+    console.error('Error fetching exam stats:', error)
+    message.error('Lỗi tải thống kê bài kiểm tra')
+  } finally {
+    loadingCharts.value.testStats = false
+  }
+}
+
 // Main fetch function with retry mechanism
 const fetchDashboardData = async (retryCount = 0) => {
   try {
     // Fetch all data in parallel for better performance
     const results = await Promise.allSettled([
       fetchTotalUsers(),
-      fetchActiveUsers(),
-      fetchMonthlyTests(),
+      fetchOnlineUsers(),
+      fetchTotalCurrentTest(),
       fetchNewUsers(),
       fetchRecentActivities(),
       fetchNotifications(),
+      fetchExamStats(),
     ])
-    
+
     // Check for any failed requests
     const failedRequests = results.filter(result => result.status === 'rejected')
     if (failedRequests.length > 0) {
@@ -281,7 +302,7 @@ const fetchDashboardData = async (retryCount = 0) => {
     }
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
-    
+
     // Retry mechanism (max 3 retries)
     if (retryCount < 3) {
       message.warning(`Đang thử lại lần ${retryCount + 1}...`)
@@ -327,7 +348,7 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .header-content .ant-btn {
     align-self: flex-end;
   }

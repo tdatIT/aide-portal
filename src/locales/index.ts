@@ -30,8 +30,8 @@ const vi = {
     patientManagement: 'Quản lý bệnh nhân',
     medicalCategories: 'Danh mục khám/xét nghiệm',
     medicalCases: 'Danh sách ca bệnh',
-    testManagement: 'Quản lý kiểm tra',
-    testExecutions: 'Kiểm tra thực hiện',
+    examManagement: 'Quản lý kiểm tra',
+    examExecutions: 'Kiểm tra thực hiện',
     userManagement: 'Quản lý người dùng',
     userList: 'Danh sách người dùng',
     userPermissions: 'Phân quyền'
@@ -49,9 +49,9 @@ const vi = {
   dashboard: {
     title: 'Trang chủ',
     totalUsers: 'Tổng số người dùng',
-    activeUsers: 'Người dùng đang hoạt động',
-    monthlyTests: 'Lượt làm bài trong tháng',
-    newUsers: 'Người dùng mới'
+    onlineUsers: 'Người dùng online',
+    totalCurrentTest: 'Lượt kiểm tra đang thực hiện',
+    newUsers: 'Người dùng mới trong tháng'
   },
   patient: {
     categories: {
@@ -106,8 +106,8 @@ const en = {
     patientManagement: 'Patient Management',
     medicalCategories: 'Medical Categories',
     medicalCases: 'Medical Cases',
-    testManagement: 'Test Management',
-    testExecutions: 'Test Executions',
+    examManagement: 'Exam Management',
+    examExecutions: 'Exam Executions',
     userManagement: 'User Management',
     userList: 'User List',
     userPermissions: 'User Permissions'
@@ -124,8 +124,8 @@ const en = {
   dashboard: {
     title: 'Dashboard',
     totalUsers: 'Total Users',
-    activeUsers: 'Active Users',
-    monthlyTests: 'Monthly Tests',
+    onlineUsers: 'Online Users',
+    totalCurrentTest: 'Total Current Test',
     newUsers: 'New Users'
   },
   patient: {
