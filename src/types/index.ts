@@ -88,7 +88,8 @@ export interface Patient {
 
 export interface ClinicalCategory {
   id: string
-  name: string
+  nameVi: string
+  nameEn: string
   description: string
   createdAt: string
   updatedAt: string
@@ -96,7 +97,8 @@ export interface ClinicalCategory {
 
 export interface ParaclinicalCategory {
   id: string
-  name: string
+  nameVi: string
+  nameEn: string
   description: string
   createdAt: string
   updatedAt: string
@@ -274,7 +276,8 @@ export interface PatientImage {
 export interface ClinicalResultDetail {
   id: number
   clinicalCateId: number
-  testName: string
+  testNameVi: string
+  testNameEn: string
   textResult: string
   notes: string
   images: PatientImage[]
@@ -283,7 +286,8 @@ export interface ClinicalResultDetail {
 export interface ParaclinicalResultDetail {
   id: number
   paraclinicalCateId: number
-  testName: string
+  testNameVi: string
+  testNameEn: string
   textResult: string
   notes: string
   score: boolean

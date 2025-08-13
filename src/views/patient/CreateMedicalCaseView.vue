@@ -116,7 +116,7 @@
                 <a-form-item :name="['clinicalRs', index, 'cateId']" label="Mục khám">
                   <a-select v-model:value="result.cateId" placeholder="Chọn mục khám">
                     <a-select-option v-for="cat in clinicalCategories" :key="cat.id" :value="cat.id">
-                      {{ cat.name }}
+                      {{ language === 'vi' ? cat.nameVi : cat.nameEn }}
                     </a-select-option>
                   </a-select>
                 </a-form-item>
@@ -169,7 +169,7 @@
                 <a-form-item :name="['paraclinicalRs', index, 'cateId']" label="Mục khám">
                   <a-select v-model:value="result.cateId" placeholder="Chọn mục khám">
                     <a-select-option v-for="cat in paraclinicalCategories" :key="cat.id" :value="cat.id">
-                      {{ cat.name }}
+                      {{ language === 'vi' ? cat.nameVi : cat.nameEn || "Untitled" }}
                     </a-select-option>
                   </a-select>
                 </a-form-item>
@@ -343,6 +343,7 @@ const route = useRoute()
 
 // Initialize step and patientId from URL params
 const currentStep = ref(0)
+const language = ref('vi')
 const patientId = ref<number | null>(null)
 const submitting = ref(false)
 
@@ -350,6 +351,7 @@ const submitting = ref(false)
 const initializeFromUrl = () => {
   const stepParam = route.query.step as string
   const patientIdParam = route.query.patientId as string
+  const languageParam = route.query.language as string
 
   if (stepParam) {
     const step = parseInt(stepParam.replace('step_', '')) - 1
@@ -360,6 +362,10 @@ const initializeFromUrl = () => {
 
   if (patientIdParam) {
     patientId.value = parseInt(patientIdParam)
+  }
+
+  if (languageParam) {
+    language.value = languageParam
   }
 }
 
@@ -375,6 +381,10 @@ const updateUrl = () => {
     query.patientId = patientId.value.toString()
   }
 
+  if (language.value) {
+    query.language = language.value
+  }
+
   const currentQuery = route.query
   if (JSON.stringify(currentQuery) !== JSON.stringify(query)) {
     router.replace({
@@ -384,7 +394,7 @@ const updateUrl = () => {
   }
 }
 
-watch([currentStep, patientId], () => {
+watch([currentStep, patientId, language], () => {
   updateUrl()
 })
 
@@ -517,6 +527,7 @@ const handleSubmitPatient = async () => {
     submitting.value = true
     const response = await APIClient.createPatient(patientForm)
     patientId.value = response.data.data.patientId
+    language.value = patientForm.language
     message.success('Tạo thông tin ca bệnh thành công')
     currentStep.value = 1
   } catch (error: any) {

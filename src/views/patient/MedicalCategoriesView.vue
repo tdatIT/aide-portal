@@ -93,8 +93,12 @@
     <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk" @cancel="handleModalCancel"
       :confirm-loading="modalLoading">
       <a-form ref="formRef" :model="formData" :rules="formRules" layout="vertical">
-        <a-form-item name="name" :label="$t('patient.categories.name')">
-          <a-input v-model:value="formData.name" :placeholder="$t('patient.categories.name')" />
+        <a-form-item name="nameVi" :label="$t('patient.categories.nameVi')">
+          <a-input v-model:value="formData.nameVi" :placeholder="$t('patient.categories.nameVi')" />
+        </a-form-item>
+
+        <a-form-item name="nameEn" :label="$t('patient.categories.nameEn')">
+          <a-input v-model:value="formData.nameEn" :placeholder="$t('patient.categories.nameEn')" />
         </a-form-item>
 
         <a-form-item name="description" :label="$t('patient.categories.description')">
@@ -135,12 +139,16 @@ const editingRecord = ref<ClinicalCategory | ParaclinicalCategory | null>(null)
 
 // Form data
 const formData = reactive({
-  name: '',
+  nameVi: '',
+  nameEn: '',
   description: ''
 })
 
 const formRules = {
-  name: [
+  nameVi: [
+    { required: true, message: 'Vui lòng nhập tên danh mục', trigger: 'blur' }
+  ],
+  nameEn: [
     { required: true, message: 'Vui lòng nhập tên danh mục', trigger: 'blur' }
   ],
   description: [
@@ -183,10 +191,17 @@ const paraclinicalCateColumns = computed(() => [
     width: 120
   },
   {
-    title: t('patient.categories.name'),
-    dataIndex: 'name',
+    title: t('patient.categories.nameVi'),
+    dataIndex: 'nameVi',
     width: 250,
-    key: 'name',
+    key: 'nameVi',
+    sorter: true
+  },
+  {
+    title: t('patient.categories.nameEn'),
+    dataIndex: 'nameEn',
+    width: 250,
+    key: 'nameEn',
     sorter: true
   },
   {
@@ -218,10 +233,17 @@ const clinicalCateColumns = computed(() => [
     width: 120
   },
   {
-    title: t('patient.categories.name'),
-    dataIndex: 'name',
+    title: t('patient.categories.nameVi'),
+    dataIndex: 'nameVi',
     width: 250,
-    key: 'name',
+    key: 'nameVi',
+    sorter: true
+  },
+  {
+    title: t('patient.categories.nameEn'),
+    dataIndex: 'nameEn',
+    width: 250,
+    key: 'nameEn',
     sorter: true
   },
   {
@@ -306,7 +328,8 @@ const openModal = (type: 'paraclinical' | 'clinical') => {
   currentType.value = type
   editingRecord.value = null
   Object.assign(formData, {
-    name: '',
+    nameVi: '',
+    nameEn: '',
     description: ''
   })
   modalVisible.value = true
@@ -316,7 +339,8 @@ const editRecord = (record: ClinicalCategory | ParaclinicalCategory, type: 'clin
   currentType.value = type
   editingRecord.value = record
   Object.assign(formData, {
-    name: record.name,
+    nameVi: record.nameVi,
+    nameEn: record.nameEn,
     description: record.description
   })
   modalVisible.value = true

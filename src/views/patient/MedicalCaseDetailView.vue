@@ -105,7 +105,7 @@
               <a-tab-pane key="clinical" tab="Kết quả lâm sàng">
                 <div v-if="caseData?.clinicalResult?.length">
                   <a-card v-for="result in caseData.clinicalResult" :key="result.id" type="inner"
-                    :title="result.testName" size="small" style="margin-bottom: 16px;">
+                    :title="language === 'vi' ? result.testNameVi : result.testNameEn" size="small" style="margin-bottom: 16px;">
                     <p><strong>Kết quả:</strong> {{ result.textResult }}</p>
                     <p v-if="result.notes"><strong>Ghi chú:</strong> {{ result.notes }}</p>
                     <div v-if="result.images?.length" style="margin-top: 12px;">
@@ -125,7 +125,7 @@
               <a-tab-pane key="paraclinical" tab="Kết quả cận lâm sàng">
                 <div v-if="caseData?.paraclinicalResult?.length">
                   <a-card v-for="result in caseData.paraclinicalResult" :key="result.id" type="inner"
-                    :title="result.testName" size="small" style="margin-bottom: 16px;">
+                    :title="language === 'vi' ? result.testNameVi : result.testNameEn" size="small" style="margin-bottom: 16px;">
                     <p><strong>Kết quả:</strong> {{ result.textResult }}</p>
                     <p v-if="result.notes"><strong>Ghi chú:</strong> {{ result.notes }}</p>
                     <p><strong>Tính điểm:</strong>
@@ -228,6 +228,8 @@ import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
 
+const language = ref('vi')
+
 // Reactive data
 const loading = ref(false)
 const caseData = ref<PatientDetail | null>(null)
@@ -239,6 +241,7 @@ const fetchCaseDetail = async () => {
     const caseId = route.params.id as string
     const response = await APIClient.getPatient(caseId)
     caseData.value = response.data.data
+    language.value = caseData.value.language
   } catch (error) {
     console.error('Error fetching case detail:', error)
     message.error('Lỗi khi tải thông tin ca bệnh')
