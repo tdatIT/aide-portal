@@ -110,7 +110,7 @@
                 </a-button>
               </template>
 
-              <div v-if="clinicalResults.length === 0" class="empty-section">
+              <div v-if="clinicalResults && clinicalResults.length === 0" class="empty-section">
                 <p>Chưa có mục khám lâm sàng nào. Nhấn "Thêm mục khám" để bắt đầu.</p>
               </div>
 
@@ -161,7 +161,7 @@
                 </a-button>
               </template>
 
-              <div v-if="paraclinicalResults.length === 0" class="empty-section">
+              <div v-if="paraclinicalResults && paraclinicalResults.length === 0" class="empty-section">
                 <p>Chưa có mục khám cận lâm sàng nào. Nhấn "Thêm mục khám" để bắt đầu.</p>
               </div>
 
@@ -219,7 +219,7 @@
                 </a-button>
               </template>
 
-              <div v-if="diffDiagnoses.length === 0" class="empty-section">
+              <div v-if="diffDiagnoses && diffDiagnoses.length === 0" class="empty-section">
                 <p>Chưa có chẩn đoán phân biệt nào. Nhấn "Thêm chẩn đoán" để bắt đầu.</p>
               </div>
 
@@ -306,8 +306,8 @@
                   v-for="cat in selectedCategoryType === 'clinical' ? clinicalCategories : paraclinicalCategories" 
                   :key="cat.id" 
                   :value="cat.id"
-                >
-                  {{ cat.name }}
+                > 
+                  {{ language === 'vi' ? cat.nameVi : cat.nameEn || "Untitled" }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -359,6 +359,8 @@ import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+
+const language = ref('vi')
 
 // Reactive data
 const loading = ref(false)
@@ -445,6 +447,7 @@ const fetchCaseDetail = async () => {
     caseId.value = id
     const response = await APIClient.getPatient(id)
     caseData.value = response.data.data
+    language.value = caseData.value.language
     // Populate profile form
     Object.assign(profileForm, {
       name: caseData.value.name,
@@ -630,7 +633,7 @@ const refreshImagesOnTabChange = () => {
   setTimeout(() => {
     if (activeTab.value === 'clinical') {
       // Refresh clinical results images
-      clinicalResults.value.forEach((result, index) => {
+      clinicalResults?.value.forEach((result, index) => {
         const uploader = clinicalImageUploaders.value[index]
         if (uploader && result.images && result.images.length > 0) {
           uploader.clearExistingImages()
@@ -799,7 +802,7 @@ const saveDiffDiagnosis = async (diagnosis: any, _index: number) => {
         score: diagnosis.score,
         patientId: parseInt(caseId.value)
       })
-      diagnosis.id = response.data.data.id
+      diagnosis.id = response.data.id
     }
     
     message.success('Lưu chẩn đoán phân biệt thành công')
@@ -883,12 +886,12 @@ const refreshPage = async () => {
 // Helper methods to get category names
 const getClinicalCategoryName = (categoryId: number) => {
   const category = clinicalCategories.value.find(cat => cat.id === categoryId)
-  return category ? category.name : 'Không xác định'
+  return category ? language.value === 'vi' ? category.nameVi : category.nameEn || "Untitled" : 'Không xác định'
 }
 
 const getParaclinicalCategoryName = (categoryId: number) => {
   const category = paraclinicalCategories.value.find(cat => cat.id === categoryId)
-  return category ? category.name : 'Không xác định'
+  return category ? language.value === 'vi' ? category.nameVi : category.nameEn || "Untitled" : 'Không xác định'
 }
 
 // Modal cancel handler

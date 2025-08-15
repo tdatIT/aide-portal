@@ -59,7 +59,8 @@ const vi = {
       clinicalExamination: 'Khám lâm sàng',
       paraclinicalTest: 'Xét nghiệm cận lâm sàng',
       type: 'Loại',
-      name: 'Tên danh mục',
+      nameVi: 'Tên danh mục [VI]',
+      nameEn: 'Tên danh mục [EN]',
       description: 'Mô tả'
     },
     cases: {
@@ -134,7 +135,8 @@ const en = {
       clinicalExamination: 'Clinical Examination',
       paraclinicalTest: 'Paraclinical Test',
       type: 'Type',
-      name: 'Category name',
+      nameVi: 'Category name [VI]',
+      nameEn: 'Category name [EN]',
       description: 'Description'
     },
     cases: {
