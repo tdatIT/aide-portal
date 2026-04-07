@@ -24,8 +24,8 @@
             allow-clear
             @change="handleStatusFilter"
           >
-            <a-select-option value="true">Active</a-select-option>
-            <a-select-option value="false">Inactive</a-select-option>
+            <a-select-option :value="true">Active</a-select-option>
+            <a-select-option :value="false">Inactive</a-select-option>
           </a-select>
         </a-space>
       </div>
@@ -86,7 +86,7 @@ const router = useRouter()
 const dataSource = ref<User[]>([])
 const loading = ref(false)
 const searchValue = ref('')
-const statusFilter = ref<string>()
+const statusFilter = ref<boolean | undefined>()
 
 // Pagination
 const pagination = reactive({
@@ -154,16 +154,25 @@ const columns: TableColumn[] = [
 const fetchData = async (params?: any) => {
   try {
     loading.value = true
-    const response = await APIClient.getUsers({
+    const requestParams = {
       page: pagination.current,
-      limit: pagination.pageSize,
-      search: searchValue.value,
-      isActive: statusFilter.value,
+      size: pagination.pageSize,
+      ...(searchValue.value.trim() ? { search: searchValue.value.trim() } : {}),
+      ...(typeof statusFilter.value === 'boolean' ? { isActive: statusFilter.value } : {}),
       ...params
-    })
-    
-    dataSource.value = response.data.data.items
-    pagination.total = response.data.data.total
+    }
+
+    const response = await APIClient.getUsers(requestParams)
+
+    const { items, total, page, size } = response.data.data
+    dataSource.value = items
+    pagination.total = total
+    if (typeof page === 'number') {
+      pagination.current = page
+    }
+    if (typeof size === 'number') {
+      pagination.pageSize = size
+    }
   } catch (error) {
     console.error('Error fetching users:', error)
     message.error('Lỗi khi tải danh sách người dùng')
